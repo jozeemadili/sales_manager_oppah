@@ -1,0 +1,159 @@
+<header class="main-nav">
+    <div class="sidebar-user text-center">
+        {{-- <a class="setting-primary" href="javascript:void(0)"><i data-feather="settings"></i></a> --}}
+        <img class="img-50 rounded-circle" src="{{asset('assets/images/dashboard/1.png')}}" alt="" />
+        <a href="{{ Route('home') }}"> <h6 class="mt-3 f-14 f-w-600">{{ucfirst(Auth::user()->first_name)}}</h6></a>
+        <p class="mb-0 font-roboto">({{ucfirst(Auth::user()->role)}})</p>
+        <!-- <p class="mb-0 font-roboto"><small>Azania Bank PLC</small></p> -->
+        <!-- <p class="mb-0 font-roboto"><small>{{substr(strtoupper(Auth::user()->company->name), 0, 34)}}</small></p> -->
+    </div>
+    <nav>
+        <div class="main-navbar">
+            <div class="left-arrow" id="left-arrow"><i data-feather="arrow-left"></i></div>
+            <div id="mainnav">
+                <ul class="nav-menu custom-scrollbar">
+                    <li class="back-btn">
+                        <div class="mobile-back text-end"><span>Back</span><i class="fa fa-angle-right ps-2" aria-hidden="true"></i></div>
+                    </li>
+
+                    <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="bar-chart"></i><span>Summary</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'block' : '' }};">
+                            <li><a href="{{route('home')}}" class="{{routeActive('home')}}"> - Dashboard</a></li>
+                            <!-- <li><a href="{{route('general')}}" class="{{routeActive('general')}}"> - General Summary</a></li> -->
+                        </ul>
+                    </li>
+
+                    @if(Auth::user()->role == 'System Admin')
+                    <!-- <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/companies/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="package"></i><span>Companies</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/companies/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('companies-branches')}}" class="{{routeActive('companies-branches')}}"> - Branches</a></li>
+                            <li><a href="{{route('companies-registration')}}" class="{{routeActive('companies-registration')}}"> - Registration</a></li>
+                            <li><a href="{{route('companies-reports')}}" class="{{routeActive('companies-reports')}}"> - Company Reports</a></li>
+                        </ul>
+                    </li> -->
+                    @endif
+
+                    @if((Auth::user()->role == 'ADMIN' || Auth::user()->role == 'Broker Admin' || Auth::user()->role == 'Agent Admin'))
+                    <!-- <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/companies/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="package"></i><span>Companies</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/companies/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('companies-branches')}}" class="{{routeActive('companies-branches')}}"> - Branches</a></li>
+                            <li><a href="{{route('companies-intermediaries')}}" class="{{routeActive('companies-intermediaries')}}"> - Insurers & Products</a></li>
+                            <li><a href="{{route('intermediary-floats')}}" class="{{routeActive('intermediary-floats')}}"> - Float & Balances</a></li>
+                        </ul>
+                    </li> -->
+                    @endif
+
+                    @if(Auth::user()->role == 'ADMIN')
+                    <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Products</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('products-registration')}}" class="{{routeActive('products-registration')}}"> - Products</a></li>
+                            <!-- <li><a href="{{route('risks-registration')}}" class="{{routeActive('risks-registration')}}"> - Product Coditions</a></li> -->
+                            <!-- @if(Auth::user()->role == 'System Admin' || Auth::user()->role == 'Insurer Admin' || Auth::user()->role == 'Insurer Staff')
+                                <li><a href="{{route('products-reports')}}" class="{{routeActive('products-reports')}}"> - Product Reports</a></li>
+                                <li><a href="{{route('risks-reports')}}" class="{{routeActive('risks-reports')}}"> - Risk Reports</a></li>
+                            @endif -->
+                        </ul>
+                    </li>
+                    @endif
+
+
+                    <!-- <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/customers/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="users"></i><span>Customers</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/customers/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('customers-registration')}}" class="{{routeActive('customers-registration')}}"> - Registration</a></li>
+                            @if(Auth::user()->role == 'ADMINISTRATOR' || Auth::user()->role == 'Insurer Admin' || Auth::user()->role == 'Insurer Staff')
+                                 <li><a href="{{route('customers-reports')}}" class="{{routeActive('customers-reports')}}"> - Customers Reports</a></li>
+                            @endif
+                        </ul>
+                    </li> -->
+
+                    <!-- <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/properties/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="truck"></i><span>Properties</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/properties/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('vehicles-registration')}}" class="{{routeActive('vehicles-registration')}}"> - Vehicles</a></li>
+                            @if(Auth::user()->role == 'ADMINISTRATOR' || Auth::user()->role == 'Insurer Admin' || Auth::user()->role == 'Insurer Staff')
+                                <li><a href="{{route('properties-reports')}}" class="{{routeActive('properties-reports')}}"> - Properties Reports</a></li>
+                            @endif
+                        </ul>
+                    </li> -->
+
+
+                    <!-- <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/policies/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="shield"></i><span>Policy & Quotations</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/policies/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('policies-quotations-verification')}}" class="{{routeActive('policies-quotations-verification')}}"> - Verification</a></li>
+                            <li><a href="{{route('policies-quotations-motor')}}" class="{{routeActive('policies-quotations-motor')}}"> - Motor</a></li>
+                            <li><a href="{{route('policies-quotations-nonmotor')}}" class="{{routeActive('policies-quotations-nonmotor')}}"> - Non Motor</a></li>
+                            {{-- <li><a href="{{route('policies-quotations')}}" class="{{routeActive('policies-quotations')}}"> - Accidents & Others</a></li>
+                            <li><a href="{{route('policies-quotations')}}" class="{{routeActive('policies-quotations')}}"> - Engineering</a></li>
+                            <li><a href="{{route('policies-quotations')}}" class="{{routeActive('policies-quotations')}}"> - Fire</a></li>
+                            <li><a href="{{route('policies-submissions')}}" class="{{routeActive('policies-submissions')}}"> - Marine</a></li> --}}
+                            @if(Auth::user()->role == 'ADMINISTRATOR' || Auth::user()->role == 'Insurer Admin' || Auth::user()->role == 'Insurer Staff')
+                                <li><a href="{{route('policies-reports')}}" class="{{routeActive('policies-reports')}}"> - Reports</a></li>
+                            @endif
+                        </ul>
+                    </li>
+ -->
+
+                    <!-- <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/claims/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="alert-octagon"></i><span>Claims</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/claims/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('claims-registration')}}" class="{{routeActive('claims-registration')}}"> - Notifications</a></li>
+                            @if(Auth::user()->role == 'ADMINISTRATOR' || Auth::user()->role == 'Insurer Admin' || Auth::user()->role == 'Insurer Staff')
+                                <li><a href="{{route('claims-reports')}}" class="{{routeActive('claims-reports')}}"> - Claims Reports</a></li>
+                            @endif
+                        </ul>
+                    </li> -->
+
+
+                    <!-- <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/payments/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="credit-card"></i><span>Payments</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/payments/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('payments-registration')}}" class="{{routeActive('payments-registration')}}"> - Making Payments</a></li>
+                            @if(Auth::user()->role == 'ADMINISTRATOR' || Auth::user()->role == 'Insurer Admin' || Auth::user()->role == 'Insurer Staff')
+                                <li><a href="{{route('payments-reports')}}" class="{{routeActive('payments-reports')}}"> - Reports</a></li>
+                            @endif
+                        </ul>
+                    </li> -->
+
+                    @if(Auth::user()->role == 'ADMIN' || Auth::user()->role == 'Qality Assurance Officer' || Auth::user()->role == 'Credit Admin' || Auth::user()->role == 'Credit Manager')
+                    <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/intermediary/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="link"></i><span>Loan</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/intermediary/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('branches-registration')}}" class="{{routeActive('branches-registration')}}"> - Application</a></li>
+                            <!-- <li><a href="{{route('intermediary-registration')}}" class="{{routeActive('intermediary-registration')}}"> - Repayment</a></li> -->
+                            <!-- {{-- <li><a href="{{route('intermediary-reports')}}" class="{{routeActive('intermediary-reports')}}"> - Reports</a></li> --}} -->
+                        </ul>
+                    </li>
+                     @endif
+                    
+
+                    <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/security/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="settings"></i><span>Security & Settings</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/security/*')) ? 'block' : '' }};">
+                            <li><a href="{{route('security-user-profile')}}" class="{{routeActive('security-user-profile')}}"> - Your Profile</a></li>
+                            @if(Auth::user()->role == 'ADMIN' )
+                                <li><a href="{{route('portal-users')}}" class="{{routeActive('portal-users')}}"> - System Users</a></li>
+                                @if(Auth::user()->role == 'ADMIN')
+                                    
+                                    <li><a href="{{route('security-system-configurations')}}" class="{{routeActive('security-system-configurations')}}"> - Configurations</a></li>
+                                    <li><a href="{{route('security-system-audit-trail')}}" class="{{routeActive('security-system-audit-trail')}}"> - Audit Trail</a></li>
+                                @endif
+                            @endif
+                        </ul>
+                    </li>
+
+                    
+                    
+                </ul>
+            </div>
+            <div class="right-arrow" id="right-arrow"><i data-feather="arrow-right"></i></div>
+        </div>
+        
+    </nav>
+    
+</header>
