@@ -57,6 +57,7 @@
 									<th scope="col">Name</th>
                                     <th scope="col">Email</th>
                                     <th scope="col">Mobile</th>
+                                    <th scope="col">Store</th>
                                     <th scope="col">Created By</th>
                                     <th scope="col">Action</th>
 								</tr>
@@ -70,6 +71,7 @@
                                     <td><a href="{{ Route('customer-profile', ['id' => $user->id])}}"><small>{{strtoupper($user->name)}}</small></a></td>
                                     <td><a href=""><small>{{$user->email}}</small></a></td>
                                     <td>{{$user->phone}}</td>
+                                    <td>{{$user->store->name}}</td>
                                     <!-- <td>{{$user->user->first_name}}</td> -->
                                     <td>
                                     @if($user->status == 'Active')

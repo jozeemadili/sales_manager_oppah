@@ -61,15 +61,15 @@
         <?php
 if (! isset($_instance)) {
     $html = \Livewire\Livewire::mount('components.reports.summary')->html();
-} elseif ($_instance->childHasBeenRendered('ABOFzKo')) {
-    $componentId = $_instance->getRenderedChildComponentId('ABOFzKo');
-    $componentTag = $_instance->getRenderedChildComponentTagName('ABOFzKo');
+} elseif ($_instance->childHasBeenRendered('tQleAiU')) {
+    $componentId = $_instance->getRenderedChildComponentId('tQleAiU');
+    $componentTag = $_instance->getRenderedChildComponentTagName('tQleAiU');
     $html = \Livewire\Livewire::dummyMount($componentId, $componentTag);
-    $_instance->preserveRenderedChild('ABOFzKo');
+    $_instance->preserveRenderedChild('tQleAiU');
 } else {
     $response = \Livewire\Livewire::mount('components.reports.summary');
     $html = $response->html();
-    $_instance->logRenderedChild('ABOFzKo', $response->id(), \Livewire\Livewire::getRootElementTagName($html));
+    $_instance->logRenderedChild('tQleAiU', $response->id(), \Livewire\Livewire::getRootElementTagName($html));
 }
 echo $html;
 ?>
@@ -87,15 +87,15 @@ echo $html;
                 <?php
 if (! isset($_instance)) {
     $html = \Livewire\Livewire::mount('components.reports.salescharts')->html();
-} elseif ($_instance->childHasBeenRendered('zpXv01m')) {
-    $componentId = $_instance->getRenderedChildComponentId('zpXv01m');
-    $componentTag = $_instance->getRenderedChildComponentTagName('zpXv01m');
+} elseif ($_instance->childHasBeenRendered('tCCHckB')) {
+    $componentId = $_instance->getRenderedChildComponentId('tCCHckB');
+    $componentTag = $_instance->getRenderedChildComponentTagName('tCCHckB');
     $html = \Livewire\Livewire::dummyMount($componentId, $componentTag);
-    $_instance->preserveRenderedChild('zpXv01m');
+    $_instance->preserveRenderedChild('tCCHckB');
 } else {
     $response = \Livewire\Livewire::mount('components.reports.salescharts');
     $html = $response->html();
-    $_instance->logRenderedChild('zpXv01m', $response->id(), \Livewire\Livewire::getRootElementTagName($html));
+    $_instance->logRenderedChild('tCCHckB', $response->id(), \Livewire\Livewire::getRootElementTagName($html));
 }
 echo $html;
 ?>
@@ -103,6 +103,8 @@ echo $html;
         </div>
     </div>
 
+    
+  
     <hr class="section-divider">
 
     <!-- 🧩 Invoice Status / Performance Section -->
@@ -115,15 +117,15 @@ echo $html;
                 <?php
 if (! isset($_instance)) {
     $html = \Livewire\Livewire::mount('components.reports.quotationstatus')->html();
-} elseif ($_instance->childHasBeenRendered('2STiH42')) {
-    $componentId = $_instance->getRenderedChildComponentId('2STiH42');
-    $componentTag = $_instance->getRenderedChildComponentTagName('2STiH42');
+} elseif ($_instance->childHasBeenRendered('xhPT51N')) {
+    $componentId = $_instance->getRenderedChildComponentId('xhPT51N');
+    $componentTag = $_instance->getRenderedChildComponentTagName('xhPT51N');
     $html = \Livewire\Livewire::dummyMount($componentId, $componentTag);
-    $_instance->preserveRenderedChild('2STiH42');
+    $_instance->preserveRenderedChild('xhPT51N');
 } else {
     $response = \Livewire\Livewire::mount('components.reports.quotationstatus');
     $html = $response->html();
-    $_instance->logRenderedChild('2STiH42', $response->id(), \Livewire\Livewire::getRootElementTagName($html));
+    $_instance->logRenderedChild('xhPT51N', $response->id(), \Livewire\Livewire::getRootElementTagName($html));
 }
 echo $html;
 ?>

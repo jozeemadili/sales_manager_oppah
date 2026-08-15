@@ -77,8 +77,8 @@
                                 <tr>
                                     <td><?php echo e($index + 1); ?></td>
                                     <td><?php echo e($truck->plate_no); ?></td>
-                                    <td><?php echo e($truck->user->first_name ?? 'N/A'); ?></td>
-                                    <td><?php echo e($truck->user->first_name ?? 'N/A'); ?></td>
+                                    <td><?php echo e($truck->driver->first_name ?? 'Unassigned'); ?></td>
+    <td><?php echo e($truck->creator->first_name ?? 'Unassigned'); ?></td>
                                     <td><?php echo e($truck->created_at ?? 'N/A'); ?></td>
                                 </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

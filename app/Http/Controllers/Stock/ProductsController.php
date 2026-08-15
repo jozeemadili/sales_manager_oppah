@@ -101,12 +101,14 @@ class ProductsController extends Controller
     {
         $barcodeValue = rand(1000000000, 9999999999);
 
-        $Products = Product::where('status','Active')->get();
+        // $Products = Product::where('status','Active')->get();
         $Inventory = Inventory::find($id);
+        $Products = Product::where('status','Active')->where('store_id',$Inventory->store_id)->get();
         $Branch = ProductsInventory::where('company_id',Auth::user()->company_id)->where('inventory_id',$id)->orderBy('id','desc')->paginate(10);
         $stores = Store::where('company_id',Auth::user()->company_id)->where('status','Active')->orderBy('id','desc')->get();
         $Categories = Category::where('company_id',Auth::user()->company_id)->where('status','Active')->orderBy('id','desc')->get();
-        $Expense = Expense::where('company_id',Auth::user()->company_id)->where('status','Active')->orderBy('id','desc')->get();
+        // $Expense = Expense::where('company_id',Auth::user()->company_id)->where('status','Active')->orderBy('id','desc')->get();
+        $Expense = Expense::where('company_id',Auth::user()->company_id)->where('status','Active')->where('to_be_used','MBAO')->orderBy('id','desc')->get();
         $ExpensesRecord = ExpensesRecord::where('company_id',Auth::user()->company_id)->where('inventory_id',$id)->orderBy('id','desc')->get();
 
         $AllProducts = ProductsInventory::where('company_id',Auth::user()->company_id)->where('inventory_id',$id)->orderBy('id','desc')->get();
@@ -148,61 +150,125 @@ class ProductsController extends Controller
         }
         
     }
+    // public function sendProductsTostock(Request $request)
+    // {
+    //     // dd("ttt".$request->id);
+    //     $inventoryId=$request->id;
+        
+    //      $inventory = DB::table('inventories')->where('id', $inventoryId)->first();
+
+    // // If already submitted, prevent reprocessing
+    // if (!$inventory || $inventory->status === 'submitted') {
+    //     return redirect()->back()->with('warning', 'Stock already submitted.');
+    // }
+
+    //     DB::transaction(function () use ($inventoryId) {
+    //         $records = DB::table('products_inventories')
+    //             ->where('inventory_id', $inventoryId)
+    //             ->get();
+    
+    //         foreach ($records as $item) {
+    //             // Convert to array
+    //             $itemArray = (array) $item;
+    
+    //             // Try to find existing product by barcode
+    //             $existing = DB::table('products')
+    //                 ->where('product_name', $item->product_name)
+    //                 ->where('store_id', $inventory->store_id) // ✅ store-specific
+    //                 ->first();
+    
+    //             if ($existing) {
+    //                 // If exists, update qty_remained
+    //                 DB::table('products')
+    //                     ->where('product_name', $item->product_name)
+    //                     ->update([
+    //                         'qty' => $existing->qty + $item->qty, // Optional: update other fields if needed
+    //                         'qty_remained' => $existing->qty_remained + $item->qty,
+    //                         'purchasing_price' => $item->purchasing_price, 
+    //                         'selling_price' => $item->selling_price, 
+    //                         'store_id'     => $inventory->store_id, // ✅ ENSURE store_id
+    //                     ]);
+    //             } else {
+    //                 // If not exists, insert new record with qty_remained = qty
+    //                 $itemArray['qty_remained'] = $item->qty;
+    //                 DB::table('products')->insert($itemArray);
+    //             }
+    //         }
+    
+    //         // Update status in products_inventories
+    //         DB::table('products_inventories')
+    //             ->where('inventory_id', $inventoryId)
+    //             ->update(['status' => 'approved']);
+
+    //             // Update status in products_inventories
+    //         DB::table('inventories')
+    //         ->where('id', $inventoryId)
+    //         ->update(['status' => 'submitted']);
+    //     });
+    //     return redirect()->back()->with('success', 'Stock Submited  successful.');
+        
+    // }
+
     public function sendProductsTostock(Request $request)
-    {
-        // dd("ttt".$request->id);
-        $inventoryId=$request->id;
-         $inventory = DB::table('inventories')->where('id', $inventoryId)->first();
+{
+    $inventoryId = $request->id;
+
+    $inventory = DB::table('inventories')->where('id', $inventoryId)->first();
 
     // If already submitted, prevent reprocessing
     if (!$inventory || $inventory->status === 'submitted') {
         return redirect()->back()->with('warning', 'Stock already submitted.');
     }
 
-        DB::transaction(function () use ($inventoryId) {
-            $records = DB::table('products_inventories')
-                ->where('inventory_id', $inventoryId)
-                ->get();
-    
-            foreach ($records as $item) {
-                // Convert to array
-                $itemArray = (array) $item;
-    
-                // Try to find existing product by barcode
-                $existing = DB::table('products')
-                    ->where('product_name', $item->product_name)
-                    ->first();
-    
-                if ($existing) {
-                    // If exists, update qty_remained
-                    DB::table('products')
-                        ->where('product_name', $item->product_name)
-                        ->update([
-                            'qty' => $existing->qty + $item->qty, // Optional: update other fields if needed
-                            'qty_remained' => $existing->qty_remained + $item->qty,
-                            'purchasing_price' => $item->purchasing_price, 
-                            'selling_price' => $item->selling_price, 
-                        ]);
-                } else {
-                    // If not exists, insert new record with qty_remained = qty
-                    $itemArray['qty_remained'] = $item->qty;
-                    DB::table('products')->insert($itemArray);
-                }
-            }
-    
-            // Update status in products_inventories
-            DB::table('products_inventories')
-                ->where('inventory_id', $inventoryId)
-                ->update(['status' => 'approved']);
+    DB::transaction(function () use ($inventoryId, $inventory) {
+        $records = DB::table('products_inventories')
+            ->where('inventory_id', $inventoryId)
+            ->get();
 
-                // Update status in products_inventories
-            DB::table('inventories')
+        foreach ($records as $item) {
+            // Convert to array
+            $itemArray = (array) $item;
+
+            // Try to find existing product
+            $existing = DB::table('products')
+                ->where('product_name', $item->product_name)
+                ->where('store_id', $inventory->store_id)
+                ->first();
+
+            if ($existing) {
+                DB::table('products')
+                    ->where('product_name', $item->product_name)
+                    ->where('store_id', $inventory->store_id)
+                    ->update([
+                        'qty' => $existing->qty + $item->qty,
+                        'qty_remained' => $existing->qty_remained + $item->qty,
+                        'purchasing_price' => $item->purchasing_price,
+                        'selling_price' => $item->selling_price,
+                        'store_id' => $inventory->store_id, // ✅ added
+                        'status' => 'Active',
+                    ]);
+            } else {
+                // Insert new product
+                $itemArray['qty_remained'] = $item->qty;
+                $itemArray['store_id'] = $inventory->store_id; // ✅ added
+                $itemArray['status'] = 'Active'; // ✅ ADD THIS LINE
+
+                DB::table('products')->insert($itemArray);
+            }
+        }
+
+        DB::table('products_inventories')
+            ->where('inventory_id', $inventoryId)
+            ->update(['status' => 'approved']);
+
+        DB::table('inventories')
             ->where('id', $inventoryId)
             ->update(['status' => 'submitted']);
-        });
-        return redirect()->back()->with('success', 'Stock Submited  successful.');
-        
-    }
+    });
+
+    return redirect()->back()->with('success', 'Stock Submited successful.');
+}
+
 
     public function updateProductTransferStatus(Request $request)
     {
@@ -383,33 +449,35 @@ class ProductsController extends Controller
             'description' => 'nullable|string',
         ]);
         // Check for duplicate
-    $existingProduct = ProductsInventory::where('product_name', $request->product_name)
-        ->where('inventory_id', $request->inventory_id)
-        ->first();
+        $existingProduct = ProductsInventory::where('product_name', $request->product_name)
+            ->where('inventory_id', $request->inventory_id)
+            ->first();
 
-    if ($existingProduct) {
-        return redirect()->back()->with('error', 'Product with name <b>' . strtoupper($request->product_name) . '</b> already exists in this inventory.');
-    }
-        
-        $user = ProductsInventory::create(   
-            [
-                'product_name'          => $request->product_name,
-                'qty'                   => $request->qty,
-                'qty_remained'          => $request->qty,
-                'unit_of_measuer'       => $request->unit_of_measuer,
-                'category'              => $request->category,
-                'barcode'               => $request->barcode,
-                'purchasing_price'      => $request->purchasing_price,
-                'selling_price'         => $request->selling_price,
-                'description'           => $request->description,
-                'store_id'              => 1,
-                'company_id'            => intval(Auth::user()->company_id),
-                'created_by'            => intval(Auth::user()->id),
-                'status'                => 'Waiting',
-                'reg_at'                => date('Y-m-d H:i:s'),
-                'inventory_id'          => $request->inventory_id,
-            ]);
-            return redirect()->back()->with('success', 'Product With name <b>'.strtoupper($request->product_name).' </b> Successfully Registered  : ');
+        if ($existingProduct) {
+            return redirect()->back()->with('error', 'Product with name <b>' . strtoupper($request->product_name) . '</b> already exists in this inventory.');
+        }
+            
+        $inventory = Inventory::findOrFail($request->inventory_id);
+
+            $user = ProductsInventory::create(   
+                [
+                    'product_name'          => $request->product_name,
+                    'qty'                   => $request->qty,
+                    'qty_remained'          => $request->qty,
+                    'unit_of_measuer'       => $request->unit_of_measuer,
+                    'category'              => $request->category,
+                    'barcode'               => $request->barcode,
+                    'purchasing_price'      => $request->purchasing_price,
+                    'selling_price'         => $request->selling_price,
+                    'description'           => $request->description,
+                    'store_id'              => $inventory->store_id,
+                    'company_id'            => intval(Auth::user()->company_id),
+                    'created_by'            => intval(Auth::user()->id),
+                    'status'                => 'Waiting',
+                    'reg_at'                => date('Y-m-d H:i:s'),
+                    'inventory_id'          => $request->inventory_id,
+                ]);
+                return redirect()->back()->with('success', 'Product With name <b>'.strtoupper($request->product_name).' </b> Successfully Registered  : ');
     }
     
     public function deleteUnsubmittedInventory($id, $status)
@@ -505,5 +573,10 @@ class ProductsController extends Controller
             return redirect()->back()->with('success', 'Expenses Recorded  successful.');    
 
         }
-        
+
+        public static function storeName($storeId)
+    {
+        return Store::where('id', $storeId)->value('name') ?? 'N/A';
+    }
+
 }

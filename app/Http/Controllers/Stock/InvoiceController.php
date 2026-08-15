@@ -43,6 +43,7 @@ class InvoiceController extends Controller
 
         return array('responseCode' => '404', 'message' => 'Invoice not Found.');
     }
+    
     public function downloadHotelInvoice($id) 
     {
         $Utils = new Utils();  

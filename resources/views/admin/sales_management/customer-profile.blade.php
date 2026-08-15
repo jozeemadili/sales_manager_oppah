@@ -15,6 +15,7 @@
     @slot('breadcrumb_action_buttons')
 
         <li><button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newModal">New <i class="icofont icofont-plus-circle"></i></button></li>
+        
 
 
     @endslot
@@ -53,93 +54,123 @@
                       
                        
                         <div class="table-responsive">
-                        @if(count($Invoice)>0)
-						<table class="table table-xs">
-							<thead>
-								<tr>
-									<th scope="col">#</th>
-									<th scope="col">invoice no</th>
-                                    <th scope="col">Type</th>
-                                    <th scope="col">Customer</th>
-                                    <th scope="col">Invoice date</th>
-                                    <th scope="col">Total Quantity</th>
-
-                                    <th scope="col">Total Amount</th>
-                                    <th scope="col">Total Paid</th>
-                                    <th scope="col">Total Remained</th>
-
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Created By</th>
-                                    <th scope="col">Action</th>
-								</tr>
-							</thead>
-							<tbody>
-                                @foreach($Invoice as $user)
-                                <?php
-                                    $totalQty = 0;
-                                    $totalAmount = 0;
-
-                                    foreach ($user['invoice_items'] as $item) {
-                                        $totalQty += $item['qty'];
-                                        $totalAmount += $item['qty'] * $item['price'];
-                                    }
-                                ?>
-								<tr>
-                              		<th scope="row">{{$loop->index + 1}}.</th>
-                                    <td><a href="#"><small>SF000{{ $user->id }}/025 </small></a></td>
-                                    <td>
-                                    @if($user->status == 'Pending')
-                                     PROFOMAL INVOICE
-                                    @elseif($user->status == 'Confirmed')
-                                    INVOICE
-                                    @else
-                                    INVOICE
-                                    @endif
-                                    </td>
-                                    
-                                    <td><a href=""><small>{{$user->Customer->name}}</small></a></td>
-                                    <td>{{ \Carbon\Carbon::parse($user->invoice_date)->format('d/m/Y H:i:s') }}</td> <!-- Invoice Date -->
-                                    <td>{{number_format($totalQty, 2)}}</td>
-                                    <td>{{number_format($user->total_invoice_amount, 2)}}</td>
-                                    <td>{{number_format($user->amount_paid, 2)}}</td>
-                                    <td>{{number_format($user->amount_remained, 2)}}</td>
-
-                                    <td>{{$user->status}}</td>
-                                    <td>{{$user->User->first_name}}</td>
-                                    <td>
-
-                                    <a href="{{ Route('invoice-download', ['id' => $user->id]) }}" class="btn btn-outline-primary btn-xs" style="margin-top: auto;" type="button">Print <i class="icofont icofont-printer"></i></a>
-                                    <a href="{{ Route('invoice-preview', ['id' => $user->id]) }}" class="btn btn-outline-primary btn-xs" style="margin-top: auto;" type="button">View <i class="icofont icofont-eye"></i></a>
-                                    @if($user->status == 'Pending')
-                                    <a href="{{ Route('invoice-status-update', ['id' => $user->id]) }}" class="btn btn-outline-primary btn-xs" style="margin-top: auto;" type="button">Confirm <i class="icofont icofont-tick-mark"></i></a>
-                                   
-                                    @elseif($user->status == 'Confirmed' || $user->status == 'Partial_Paid' )
-                                    {{-- <a href="{{ Route('invoice-status-paid', ['id' => $user->id]) }}" class="btn btn-outline-secondary btn-xs" style="margin-top: auto;" type="button">Mark Paid <i class="icofont icofont-money"></i></a> --}}
-                                    <a  class="btn btn-primary btn-xs" data-bs-toggle="modal" data-bs-target="#approvalModal{{$user->id}}"><i class='fa fa-tags'></i> Receive Payment</a>
-                                    <a  class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#approvalModal_payment{{$user->id}}"><i class='fa fa-tags'></i> Payment Details</a>
-                                    @else
-                                    {{-- <a href="#" class="btn btn-outline-info btn-xs" style="margin-top: auto;" type="button">Payment Details <i class="icofont icofont-tick-mark"></i></a> --}}
-                                    <a  class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#approvalModal_payment{{$user->id}}"><i class='fa fa-tags'></i> Payment Details</a>
-                                    @endif
-                                    
-                                    
-
-                                    
-							</td>
-                                   	</tr>
-                                @endforeach
-							</tbody>
-						</table>
-                        <br />
-                      
-
-                        @else 
-                        <div class="alert alert-danger outline alert-dismissible fade show" role="alert">
-                            <i class="icon-info-alt txt-danger"></i>
-								No Records Found yet
-                            <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close" ></button>
-                       	</div>
-                        @endif
+                            @if(count($Invoice) > 0)
+                            <table class="table table-xs table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Invoice No</th>
+                                        <th>Type</th>
+                                        <th>Customer</th>
+                                        <th>Invoice Date</th>
+                                        <th>Total Quantity</th>
+                                        <th>Total Amount</th>
+                                        <th>Total Paid</th>
+                                        <th>Total Remained</th>
+                                        <th>Status</th>
+                                        <th>Created By</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                            
+                                <tbody>
+                                    @foreach($Invoice as $user)
+                                    @php
+                                        $totalQty = $user->invoice_items->sum('qty');
+                                    @endphp
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                            
+                                        <td>
+                                            <a href="#">
+                                                <small>SF000{{ $user->id }}/025</small>
+                                            </a>
+                                        </td>
+                            
+                                        <td>
+                                            @if($user->status == 'Pending')
+                                                PROFORMA INVOICE
+                                            @else
+                                                INVOICE
+                                            @endif
+                                        </td>
+                            
+                                        <td>
+                                            <small>{{ $user->Customer->name }}</small>
+                                        </td>
+                            
+                                        <td>
+                                            {{ \Carbon\Carbon::parse($user->invoice_date)->format('d/m/Y H:i:s') }}
+                                        </td>
+                            
+                                        <td>{{ number_format($totalQty, 2) }}</td>
+                            
+                                        <td>{{ number_format($user->total_invoice_amount, 2) }}</td>
+                            
+                                        <td>{{ number_format($user->amount_paid, 2) }}</td>
+                            
+                                        <td>{{ number_format($user->amount_remained, 2) }}</td>
+                            
+                                        <td>
+                                            <span class="badge bg-{{ $user->status == 'Paid' ? 'success' : 'warning' }}">
+                                                {{ $user->status }}
+                                            </span>
+                                        </td>
+                            
+                                        <td>{{ $user->User->first_name }}</td>
+                            
+                                        <td>
+                                            <a href="{{ route('invoice-download', $user->id) }}"
+                                               class="btn btn-outline-primary btn-xs">
+                                                Print
+                                            </a>
+                            
+                                            <a href="{{ route('invoice-preview', $user->id) }}"
+                                               class="btn btn-outline-info btn-xs">
+                                                View
+                                            </a>
+                            
+                                            @if($user->status == 'Pending')
+                                                <a href="{{ route('invoice-status-update', $user->id) }}"
+                                                   class="btn btn-outline-success btn-xs">
+                                                    Confirm
+                                                </a>
+                                            @else
+                                                <a class="btn btn-primary btn-xs"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#approvalModal{{ $user->id }}">
+                                                    Receive Payment
+                                                </a>
+                            
+                                                <a class="btn btn-info btn-xs"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#approvalModal_payment{{ $user->id }}">
+                                                    Payment Details
+                                                </a>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            
+                                <tfoot class="table-secondary fw-bold">
+                                    <tr>
+                                        <td colspan="5" class="text-end">TOTAL</td>
+                                        <td>{{ number_format($grandTotalQty, 2) }}</td>
+                                        <td>{{ number_format($grandTotalAmount, 2) }}</td>
+                                        <td>{{ number_format($grandTotalPaid, 2) }}</td>
+                                        <td>{{ number_format($grandTotalRemained, 2) }}</td>
+                                        <td colspan="3"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            
+                            @else
+                            <div class="alert alert-danger">
+                                No Records Found
+                            </div>
+                            @endif
+                            
 					</div>
 
                         </div>

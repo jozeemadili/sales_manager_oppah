@@ -60,7 +60,7 @@
                                     <th scope="col">Vihecle No</th>
                                     <th scope="col">Description</th>
                                     <th scope="col">Invetory Date</th>
-                                
+                                    <th scope="col">Store</th>
                                     <th scope="col">Status</th>
                                     <th scope="col">Created By</th>
                                     <th scope="col">Action</th>
@@ -75,7 +75,9 @@
                                     <td><a href=""><small><?php echo e(strtoupper($user->vihecle_no)); ?></small></a></td>
                                     <td><a href=""><small><?php echo e($user->description); ?></small></a></td>
                                     <td><a href=""><small><?php echo e($user->inventory_date); ?></small></a></td>
+                                    <td><?php echo e($user->store->name); ?></td>
                                     <td><?php echo e($user->status); ?></td>
+                                    
                                     <td><?php echo e($user->user->first_name); ?></td>
                                     <td>
                                     <div class="pull-left"> <a href='<?php echo Route('inventory-preview', ['id' => $user->id]); ?>' class='btn btn-outline-info btn-xs'> view </a>
@@ -144,6 +146,15 @@
                             
                                 <!-- Hidden input for manual entry -->
                                 <input class="form-control mt-2 d-none" type="text" id="manualCompanyInput" name="manual_company_name" placeholder="Enter new company name">
+                            </div>
+                            <div class="form-group">
+                                <label class="col-form-label">Select Store</label>
+                                <select class="form-control"  name="store_id" >
+                                    <option value="">-- Select Store --</option>
+                                    <?php $__currentLoopData = $companystore; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $store): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($store->id); ?>"><?php echo e($store->name); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label class="col-form-label" > Vihecle Number</label>

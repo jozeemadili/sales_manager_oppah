@@ -19,6 +19,8 @@
                         <a class="nav-link menu-title <?php echo e((request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'active' : ''); ?>" href="javascript:void(0)"><i data-feather="bar-chart"></i><span>Summary</span></a>
                         <ul class="nav-submenu menu-content" style="display: <?php echo e((request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'block' : ''); ?>;">
                             <li><a href="<?php echo e(route('home')); ?>" class="<?php echo e(routeActive('home')); ?>"> - Summary</a></li>
+                            <li><a href="<?php echo e(route('home-truck')); ?>" class="<?php echo e(routeActive('home-truck')); ?>"> - Summary Trucks</a></li>
+                            <li><a href="<?php echo e(route('home-hardcore')); ?>" class="<?php echo e(routeActive('home-hardcore')); ?>"> - Summary Hardware</a></li>
                             <!-- <li><a href="<?php echo e(route('home-hotel')); ?>" class="<?php echo e(routeActive('home-hotel')); ?>">  - Summary hotel </a></li> -->
                           
                         </ul>
@@ -42,9 +44,10 @@
                         </ul>
                     </li> -->
                     <?php endif; ?>
-                   
+                    
+                <?php if(Auth::user()->role != 'Driver'): ?>
                   <li class="dropdown">
-                        <a class="nav-link menu-title <?php echo e((request()->is('v1/products/*')) ? 'active' : ''); ?>" href="javascript:void(0)"><i data-feather="grid"></i><span>Store & Inventory</span></a>
+                        <a class="nav-link menu-title <?php echo e((request()->is('v1/products/*')) ? 'active' : ''); ?>" href="javascript:void(0)"><i data-feather="grid"></i><span>Inventory (mbao)</span></a>
                         <ul class="nav-submenu menu-content" style="display: <?php echo e((request()->is('v1/products/*')) ? 'block' : ''); ?>;">
                         <li><a href="<?php echo e(route('stores-management')); ?>" class="<?php echo e(routeActive('stores-management')); ?>">  - Stores</a></li>
                         <li><a href="<?php echo e(route('categories-management')); ?>" class="<?php echo e(routeActive('categories-management')); ?>">  - Category</a></li>
@@ -55,6 +58,28 @@
                         <!-- <li><a href="<?php echo e(route('operate-sale')); ?>" class="<?php echo e(routeActive('operate-sale')); ?>">  - Operate Sale</a></li> -->
                         <li><a href="<?php echo e(route('customers-management')); ?>" class="<?php echo e(routeActive('customers-management')); ?>">  - Sales/Customers</a></li>
                         
+                        <!-- <li><a href="#" class="#"> - Operate Sales</a></li>
+                        <li><a href="#" class="#"> - Sales Report</a></li> -->
+                        </ul>
+                    </li>
+
+                    <li class="dropdown">
+                        <a class="nav-link menu-title <?php echo e((request()->is('v1/products/*')) ? 'active' : ''); ?>" href="javascript:void(0)"><i data-feather="grid"></i><span>Inventory (hard ware)</span></a>
+                        <ul class="nav-submenu menu-content" style="display: <?php echo e((request()->is('v1/products/*')) ? 'block' : ''); ?>;">
+                        <li><a href="<?php echo e(route('stores-management-tuli')); ?>" class="<?php echo e(routeActive('stores-management-tuli')); ?>">  - Stores</a></li>
+                        <li><a href="<?php echo e(route('categories-management-tuli')); ?>" class="<?php echo e(routeActive('categories-management-tuli')); ?>">  - Category</a></li>
+                        <li><a href="<?php echo e(route('invetories-management-tuli')); ?>" class="<?php echo e(routeActive('invetories-management-tuli')); ?>">  - Invetories</a></li>
+                        <li><a href="<?php echo e(route('my-suppliers-tuli')); ?>" class="<?php echo e(routeActive('my-suppliers-tuli')); ?>">  - My Suppliers</a></li>
+                        <li><a href="<?php echo e(route('expenses-management-tuli')); ?>" class="<?php echo e(routeActive('expenses-management-tuli')); ?>">  - Expenses</a></li>
+                        <li><a href="<?php echo e(route('product-registration-tuli')); ?>" class="<?php echo e(routeActive('product-registration-tuli')); ?>">  - Stock Management</a></li>
+                        <!-- <li><a href="<?php echo e(route('operate-sale')); ?>" class="<?php echo e(routeActive('operate-sale')); ?>">  - Operate Sale</a></li> -->
+                        <li><a href="<?php echo e(route('customers-management-tuli')); ?>" class="<?php echo e(routeActive('customers-management-tuli')); ?>">  - Sales/Customers</a></li>
+                        <li>
+                            <a href="<?php echo e(route('quick-sale')); ?>" class="<?php echo e(routeActive('quick-sale')); ?>">
+                                - Quick / Cash Sale
+                            </a>
+                        </li>
+                        <li><a href="<?php echo e(route('sales-report-tuli')); ?>" class="<?php echo e(routeActive('sales-report-tuli')); ?>">  - Sales</a></li>
                         <!-- <li><a href="#" class="#"> - Operate Sales</a></li>
                         <li><a href="#" class="#"> - Sales Report</a></li> -->
                         </ul>
@@ -90,15 +115,20 @@
                         <li><a href="<?php echo e(route('product-transfered')); ?>" class="<?php echo e(routeActive('product-transfered')); ?>">  - Product Transfered</a></li>
                         </ul>
                     </li>
+                    <?php endif; ?>
                     <li class="dropdown">
                         <a class="nav-link menu-title <?php echo e((request()->is('v1/products/*')) ? 'active' : ''); ?>" href="javascript:void(0)"><i data-feather="grid"></i><span>Logistics</span></a>
                         <ul class="nav-submenu menu-content" style="display: <?php echo e((request()->is('v1/products/*')) ? 'block' : ''); ?>;">
                        
                         <li><a href="<?php echo e(route('truck-drivers')); ?>" class="<?php echo e(routeActive('truck-drivers')); ?>">  - Trucks & Drivers</a></li>
                         <li><a href="<?php echo e(route('trips-management')); ?>" class="<?php echo e(routeActive('trips-management')); ?>">  - Trips</a></li>
+                        <li><a href="<?php echo e(route('truck-reports')); ?>" class="<?php echo e(routeActive('truck-reports')); ?>">  - Truck Reports</a></li>
+                        <li><a href="<?php echo e(route('truck-ejy')); ?>" class="<?php echo e(routeActive('truck-ejy')); ?>">  - Report for T821EJY</a></li>
+                        <li><a href="<?php echo e(route('bank-deposit')); ?>" class="<?php echo e(routeActive('bank-deposit')); ?>">  - Bank Deposit</a></li>
                         
                         </ul>
                     </li>
+                    
                     <li class="dropdown">
                         <a class="nav-link menu-title <?php echo e((request()->is('v1/security/*')) ? 'active' : ''); ?>" href="javascript:void(0)"><i data-feather="settings"></i><span>Security & Settings</span></a>
                         <ul class="nav-submenu menu-content" style="display: <?php echo e((request()->is('v1/security/*')) ? 'block' : ''); ?>;">

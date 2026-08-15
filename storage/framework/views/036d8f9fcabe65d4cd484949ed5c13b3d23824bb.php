@@ -31,18 +31,33 @@
     <?php $__env->slot('breadcrumb_title'); ?>
         <h3><?php echo e(ucfirst(str_replace('-', ' ', Route::currentRouteName()))); ?></h3>
     <?php $__env->endSlot(); ?>
-
+    
+    
     <?php $__env->slot('breadcrumb_action_buttons'); ?>
-        <li>
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newModal_expense">
-                Record Expense <i class="icofont icofont-plus-circle"></i>
-            </button>
-        </li>
-        <li>
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newModal_route_plan">
-                Route Plan <i class="icofont icofont-plus-circle"></i>
-            </button>
-        </li>
+
+    <?php if($TrucksRoute->status == 'Pending'): ?>
+    <li><a href='<?php echo Route('send-approve', ['id' => $TrucksRoute->id]); ?>' class='btn btn-outline-primary'>Send To Stock</a> </li>
+
+   
+    <li>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newModal_expense">
+            Record Expense <i class="icofont icofont-plus-circle"></i>
+        </button>
+    </li>
+    <li>
+        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newModal_route_plan">
+            Route Plan <i class="icofont icofont-plus-circle"></i>
+        </button>
+    </li>
+    <?php else: ?>
+    <li><a href='#' class='btn btn-outline-danger'>Request submitted —  cannot be Edited</a> </li>
+    <li><a href="https://wa.me/?text=<?php echo e(urlencode(route('free-ledger-download', $TrucksRoute->id))); ?>" target="_blank" class="btn btn-info">
+        Share via WhatsApp
+    </a></li>
+    <li><a href="<?php echo e(route('invoice-download-ledger', ['id' => $TrucksRoute->id])); ?>" class="btn btn-outline-primary ">Print</a></li>
+    <?php endif; ?>
+
+        
     <?php $__env->endSlot(); ?>
 
     <li class="breadcrumb-item"><?php echo e(ucfirst(explode('-', Route::currentRouteName())[0])); ?></li>
@@ -98,12 +113,16 @@
                     <div class="info-card p-3">
                         <p class="info-title mb-1">Going Customer</p>
                         <p class="info-value mb-0"><?php echo e(ucfirst($TrucksRoute->going_customer)); ?></p>
+                        <p class="info-title mb-1">Going Fee</p>
+                        <p class="info-value mb-0"><?php echo e(number_format($TrucksRoute->going_transport_fee ?? 0, 2)); ?> TZS</p>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="info-card p-3">
                         <p class="info-title mb-1">Return Customer</p>
                         <p class="info-value mb-0"><?php echo e(ucfirst($TrucksRoute->return_customer)); ?></p>
+                        <p class="info-title mb-1">Return Fee</p>
+                        <p class="info-value mb-0"><?php echo e(number_format($TrucksRoute->return_transport_fee ?? 0, 2)); ?> TZS</p>
                     </div>
                 </div>
             </div>
@@ -118,28 +137,34 @@
             ?>
 
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="info-card p-3 text-center bg-light">
                         <h6 class="text-primary mb-1">Total Transport Fee</h6>
                         <h5 class="mb-0 text-success"><?php echo e(number_format($total_transport_fee, 2)); ?> TZS</h5>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="info-card p-3 text-center bg-light">
-                        <h6 class="text-primary mb-1">Total Route Plan</h6>
+                        <h6 class="text-primary mb-1">Total Route Fuel</h6>
                         <h5 class="mb-0 text-info"><?php echo e(number_format($total_route_plan, 2)); ?> TZS</h5>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <div class="info-card p-3 text-center bg-light">
                         <h6 class="text-primary mb-1">Total Expenses</h6>
                         <h5 class="mb-0 text-warning"><?php echo e(number_format($total_expenses, 2)); ?> TZS</h5>
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <div class="info-card p-3 text-center <?php echo e($balance >= 0 ? 'bg-success text-white' : 'bg-danger text-white'); ?>">
-                        <h6 class="mb-1">Balance Remaining</h6>
+                    <div class="info-card p-3 text-center <?php echo e($balance >= 0 ? 'bg-primary text-white' : 'bg-danger text-white'); ?>">
+                        <h6 class="mb-1">Balance Remaining (Trip)</h6>
                         <h5 class="mb-0"><?php echo e(number_format($balance, 2)); ?> TZS</h5>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="info-card p-3 text-center <?php echo e($balance >= 0 ? 'bg-success text-white' : 'bg-danger text-white'); ?>">
+                        <h6 class="mb-1">Balance Remaining (Month)</h6>
+                        <h5 class="mb-0"><?php echo e(number_format($balanceRemainingMonth, 2)); ?> TZS</h5>
                     </div>
                 </div>
             </div>
@@ -150,7 +175,7 @@
                     <div class="info-card p-3">
                         <p class="info-title mb-1">Truck Details</p>
                         <p class="info-value mb-0">Plate No: <?php echo e($TrucksRoute->our_truck->plate_no ?? 'N/A'); ?></p>
-                        <p class="info-value mb-0">Driver: <?php echo e($TrucksRoute->our_truck->user->first_name ?? 'Unassigned'); ?></p>
+                        <p class="info-value mb-0">Driver: <?php echo e($TrucksRoute->our_truck->driver->first_name ?? 'Unassigned'); ?></p>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -181,9 +206,11 @@
             
             <div class="tab-pane fade show active" id="routePlans" role="tabpanel">
                 <div class="d-flex justify-content-end mb-3">
+                    <?php if($TrucksRoute->status == 'Pending'): ?>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newModal_route_plan">
                         + Add Route Plan
                     </button>
+                    <?php endif; ?>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
@@ -198,6 +225,7 @@
                                 <th>Description</th>
                                 <th>Created By</th>
                                 <th>Created At</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -212,6 +240,18 @@
                                     <td><?php echo e($plan->description); ?></td>
                                     <td><?php echo e($plan->user->first_name ?? 'N/A'); ?></td>
                                     <td><?php echo e(\Carbon\Carbon::parse($plan->created_at)->format('d M Y H:i')); ?></td>
+                                    <td>
+                                        <?php if($TrucksRoute->status == 'Pending'): ?>
+                                        <div class="pull-right">
+                                            <a href="<?php echo Route('delete-unsubmited-plam', ['id' => $plan->id, 'status' => 'Inactive']); ?>" 
+                                               class="btn btn-outline-danger btn-xs"
+                                               onclick="return confirm('Are you sure you want to delete all inventory data?')">
+                                               Delete <i class="icofont icofont-ui-delete"></i>
+                                            </a>
+                                          </div>
+
+                                          <?php endif; ?>
+                                        </td>
                                 </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>
@@ -226,9 +266,11 @@
             
             <div class="tab-pane fade" id="expenses" role="tabpanel">
                 <div class="d-flex justify-content-end mb-3">
+                    <?php if($TrucksRoute->status == 'Pending'): ?>
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newModal_expense">
                         + Record Expense
                     </button>
+                    <?php endif; ?>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
@@ -240,6 +282,7 @@
                                 <th>Description</th>
                                 <th>Status</th>
                                 <th>Created By</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -251,6 +294,19 @@
                                     <td><?php echo e(strtoupper($b->desr)); ?></td>
                                     <td><?php echo e($b->status); ?></td>
                                     <td><?php echo e($b->user->first_name); ?></td>
+
+                                    <td> 
+                                        <?php if($TrucksRoute->status == 'Pending'): ?>
+                                        <div class="pull-right">
+                                        <a href="<?php echo Route('delete-unsubmited-expense', ['id' => $b->id, 'status' => 'Inactive']); ?>" 
+                                           class="btn btn-outline-danger btn-xs"
+                                           onclick="return confirm('Are you sure you want to delete all inventory data?')">
+                                           Delete <i class="icofont icofont-ui-delete"></i>
+                                        </a>
+                                      </div>
+                                      <?php endif; ?>
+                                    
+                                    </td>
                                 </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>

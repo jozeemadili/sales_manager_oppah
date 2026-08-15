@@ -17,7 +17,13 @@ class CustomersController extends Controller
 {
     public function get()
     {
+        if(Auth::user()->email == 'jchaboma@oppah01.co.tz')
+        {
             $Branch = Customer::where('company_id',Auth::user()->company_id)->orderBy('id','desc')->paginate(10);
+        }else{
+            $Branch = Customer::where('company_id',Auth::user()->company_id)->where('store_id',Auth::user()->office_location)->orderBy('id','desc')->paginate(10);
+        }
+            
            return view('admin.sales_management.customers-registration',['Branch' => $Branch]);
     }
     public function searchCustomer(Request $request)
@@ -152,19 +158,56 @@ if ($request->filled('product_name')) {
             'status'          => 'Active',
             'created_at'      => now(),
             'created_by'      => intval(Auth::user()->id),
+            'store_id'      => intval(Auth::user()->office_location),
             
         ]);
         return redirect()->route('customers-management')->with('success', 'Customer With name <b>'.strtoupper($request->name).' </b> Successfully Registered  : ');
     }
+    // public function profile($id)
+    // {
+       
+    //         $Customers= Customer::find($id);
+    //         $Invoice= Invoice::where('customer_id',$id)->with('invoice_items')->with('invoice_payment_details')->get();
+    //         $sales = Sale::where('customer_id',$id)->paginate(10);
+    //         return view('admin.sales_management.customer-profile',['Customers' => $Customers,'Invoice' => $Invoice,'sales'=>$sales]);
+       
+    // }
     public function profile($id)
-    {
-       
-            $Customers= Customer::find($id);
-            $Invoice= Invoice::where('customer_id',$id)->with('invoice_items')->with('invoice_payment_details')->get();
-            $sales = Sale::where('customer_id',$id)->paginate(10);
-            return view('admin.sales_management.customer-profile',['Customers' => $Customers,'Invoice' => $Invoice,'sales'=>$sales]);
-       
+{
+    $customer = Customer::findOrFail($id);
+
+    $invoices = Invoice::where('customer_id', $id)
+        ->with('invoice_items', 'invoice_payment_details', 'Customer', 'User')
+        ->get();
+
+    $sales = Sale::where('customer_id', $id)->paginate(10);
+
+    // ===== Grand Totals =====
+    $grandTotalQty = 0;
+    $grandTotalAmount = 0;
+    $grandTotalPaid = 0;
+    $grandTotalRemained = 0;
+
+    foreach ($invoices as $invoice) {
+        $invoiceQty = $invoice->invoice_items->sum('qty');
+
+        $grandTotalQty += $invoiceQty;
+        $grandTotalAmount += $invoice->total_invoice_amount;
+        $grandTotalPaid += $invoice->amount_paid;
+        $grandTotalRemained += $invoice->amount_remained;
     }
+
+    return view('admin.sales_management.customer-profile', [
+        'Customers' => $customer,
+        'Invoice' => $invoices,
+        'sales' => $sales,
+        'grandTotalQty' => $grandTotalQty,
+        'grandTotalAmount' => $grandTotalAmount,
+        'grandTotalPaid' => $grandTotalPaid,
+        'grandTotalRemained' => $grandTotalRemained,
+    ]);
+}
+
     public function invoiceReport()
     {
         if(Route::currentRouteName()=='invoices-pending')

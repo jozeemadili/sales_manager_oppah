@@ -34,7 +34,8 @@ class Inventory extends Model
 
 	protected $casts = [
 		'reg_by' => 'int',
-		'company_id' => 'int'
+		'company_id' => 'int',
+		'store_id' => 'int'
 	];
 
 	protected $dates = [
@@ -50,7 +51,8 @@ class Inventory extends Model
 		'reg_by',
 		'reg_at',
 		'status',
-		'company_id'
+		'company_id',
+		'store_id',
 	];
 
 	public function user()
@@ -62,4 +64,8 @@ class Inventory extends Model
 	{
 		return $this->belongsTo(Company::class);
 	}
+	public function store()
+{
+    return $this->belongsTo(Store::class, 'store_id');
+}
 }

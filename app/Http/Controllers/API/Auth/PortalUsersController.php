@@ -22,10 +22,45 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
+use App\Models\OurTruck;
+use App\Http\Controllers\Stock\LogisticsController;
+
 
 
 class PortalUsersController extends Controller
 {
+    public function indexTest()
+    {
+        $user = Auth::user();
+
+        if ($user->role == 'ADMIN') {
+            return view('admin.dashboard.home');
+        } 
+        elseif ($user->role == 'Driver') 
+        {
+            if (Auth::user()->role == 'ADMIN') {
+                // Admin sees all trucks
+                $OurTruck = OurTruck::orderBy('id', 'desc')->get();
+            } 
+            elseif (Auth::user()->role == 'Driver') {
+                // Driver sees only their assigned truck(s)
+                $OurTruck = OurTruck::where('driver_id', Auth::user()->id)
+                                    ->orderBy('id', 'desc')
+                                    ->get();
+            } 
+            else {
+                // Optional: handle other roles (e.g., Manager, Mechanic)
+                $OurTruck = collect(); // empty collection to avoid errors
+            }
+            $logisticsController = new LogisticsController();
+            $trip_no = $logisticsController->generateTripNoAjax();
+            // dd($trip_no);
+            return view('admin.dashboard.driver-home',['OurTruck'=>$OurTruck,'trip_no'=>$trip_no]);
+        } else {
+            return view('admin.dashboard.home');
+        }
+    }
+
     public function get()
     {
         $users = User::orderBy('id','desc')->paginate(10);

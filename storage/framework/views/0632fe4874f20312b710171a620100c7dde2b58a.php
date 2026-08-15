@@ -15,6 +15,7 @@
     <?php $__env->slot('breadcrumb_action_buttons'); ?>
 
         <li><button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newModal">New <i class="icofont icofont-plus-circle"></i></button></li>
+        
 
 
     <?php $__env->endSlot(); ?>
@@ -55,93 +56,125 @@
                       
                        
                         <div class="table-responsive">
-                        <?php if(count($Invoice)>0): ?>
-						<table class="table table-xs">
-							<thead>
-								<tr>
-									<th scope="col">#</th>
-									<th scope="col">invoice no</th>
-                                    <th scope="col">Type</th>
-                                    <th scope="col">Customer</th>
-                                    <th scope="col">Invoice date</th>
-                                    <th scope="col">Total Quantity</th>
+                            <?php if(count($Invoice) > 0): ?>
+                            <table class="table table-xs table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Invoice No</th>
+                                        <th>Type</th>
+                                        <th>Customer</th>
+                                        <th>Invoice Date</th>
+                                        <th>Total Quantity</th>
+                                        <th>Total Amount</th>
+                                        <th>Total Paid</th>
+                                        <th>Total Remained</th>
+                                        <th>Status</th>
+                                        <th>Created By</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                            
+                                <tbody>
+                                    <?php $__currentLoopData = $Invoice; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php
+                                        $totalQty = $user->invoice_items->sum('qty');
+                                    ?>
+                                    <tr>
+                                        <td><?php echo e($loop->iteration); ?></td>
+                            
+                                        <td>
+                                            <a href="#">
+                                                <small>SF000<?php echo e($user->id); ?>/025</small>
+                                            </a>
+                                        </td>
+                            
+                                        <td>
+                                            <?php if($user->status == 'Pending'): ?>
+                                                PROFORMA INVOICE
+                                            <?php else: ?>
+                                                INVOICE
+                                            <?php endif; ?>
+                                        </td>
+                            
+                                        <td>
+                                            <small><?php echo e($user->Customer->name); ?></small>
+                                        </td>
+                            
+                                        <td>
+                                            <?php echo e(\Carbon\Carbon::parse($user->invoice_date)->format('d/m/Y H:i:s')); ?>
 
-                                    <th scope="col">Total Amount</th>
-                                    <th scope="col">Total Paid</th>
-                                    <th scope="col">Total Remained</th>
+                                        </td>
+                            
+                                        <td><?php echo e(number_format($totalQty, 2)); ?></td>
+                            
+                                        <td><?php echo e(number_format($user->total_invoice_amount, 2)); ?></td>
+                            
+                                        <td><?php echo e(number_format($user->amount_paid, 2)); ?></td>
+                            
+                                        <td><?php echo e(number_format($user->amount_remained, 2)); ?></td>
+                            
+                                        <td>
+                                            <span class="badge bg-<?php echo e($user->status == 'Paid' ? 'success' : 'warning'); ?>">
+                                                <?php echo e($user->status); ?>
 
-                                    <th scope="col">Status</th>
-                                    <th scope="col">Created By</th>
-                                    <th scope="col">Action</th>
-								</tr>
-							</thead>
-							<tbody>
-                                <?php $__currentLoopData = $Invoice; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <?php
-                                    $totalQty = 0;
-                                    $totalAmount = 0;
-
-                                    foreach ($user['invoice_items'] as $item) {
-                                        $totalQty += $item['qty'];
-                                        $totalAmount += $item['qty'] * $item['price'];
-                                    }
-                                ?>
-								<tr>
-                              		<th scope="row"><?php echo e($loop->index + 1); ?>.</th>
-                                    <td><a href="#"><small>SF000<?php echo e($user->id); ?>/025 </small></a></td>
-                                    <td>
-                                    <?php if($user->status == 'Pending'): ?>
-                                     PROFOMAL INVOICE
-                                    <?php elseif($user->status == 'Confirmed'): ?>
-                                    INVOICE
-                                    <?php else: ?>
-                                    INVOICE
-                                    <?php endif; ?>
-                                    </td>
-                                    
-                                    <td><a href=""><small><?php echo e($user->Customer->name); ?></small></a></td>
-                                    <td><?php echo e(\Carbon\Carbon::parse($user->invoice_date)->format('d/m/Y H:i:s')); ?></td> <!-- Invoice Date -->
-                                    <td><?php echo e(number_format($totalQty, 2)); ?></td>
-                                    <td><?php echo e(number_format($user->total_invoice_amount, 2)); ?></td>
-                                    <td><?php echo e(number_format($user->amount_paid, 2)); ?></td>
-                                    <td><?php echo e(number_format($user->amount_remained, 2)); ?></td>
-
-                                    <td><?php echo e($user->status); ?></td>
-                                    <td><?php echo e($user->User->first_name); ?></td>
-                                    <td>
-
-                                    <a href="<?php echo e(Route('invoice-download', ['id' => $user->id])); ?>" class="btn btn-outline-primary btn-xs" style="margin-top: auto;" type="button">Print <i class="icofont icofont-printer"></i></a>
-                                    <a href="<?php echo e(Route('invoice-preview', ['id' => $user->id])); ?>" class="btn btn-outline-primary btn-xs" style="margin-top: auto;" type="button">View <i class="icofont icofont-eye"></i></a>
-                                    <?php if($user->status == 'Pending'): ?>
-                                    <a href="<?php echo e(Route('invoice-status-update', ['id' => $user->id])); ?>" class="btn btn-outline-primary btn-xs" style="margin-top: auto;" type="button">Confirm <i class="icofont icofont-tick-mark"></i></a>
-                                   
-                                    <?php elseif($user->status == 'Confirmed' || $user->status == 'Partial_Paid' ): ?>
-                                    
-                                    <a  class="btn btn-primary btn-xs" data-bs-toggle="modal" data-bs-target="#approvalModal<?php echo e($user->id); ?>"><i class='fa fa-tags'></i> Receive Payment</a>
-                                    <a  class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#approvalModal_payment<?php echo e($user->id); ?>"><i class='fa fa-tags'></i> Payment Details</a>
-                                    <?php else: ?>
-                                    
-                                    <a  class="btn btn-info btn-xs" data-bs-toggle="modal" data-bs-target="#approvalModal_payment<?php echo e($user->id); ?>"><i class='fa fa-tags'></i> Payment Details</a>
-                                    <?php endif; ?>
-                                    
-                                    
-
-                                    
-							</td>
-                                   	</tr>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-							</tbody>
-						</table>
-                        <br />
-                      
-
-                        <?php else: ?> 
-                        <div class="alert alert-danger outline alert-dismissible fade show" role="alert">
-                            <i class="icon-info-alt txt-danger"></i>
-								No Records Found yet
-                            <button class="btn-close" type="button" data-bs-dismiss="alert" aria-label="Close" ></button>
-                       	</div>
-                        <?php endif; ?>
+                                            </span>
+                                        </td>
+                            
+                                        <td><?php echo e($user->User->first_name); ?></td>
+                            
+                                        <td>
+                                            <a href="<?php echo e(route('invoice-download', $user->id)); ?>"
+                                               class="btn btn-outline-primary btn-xs">
+                                                Print
+                                            </a>
+                            
+                                            <a href="<?php echo e(route('invoice-preview', $user->id)); ?>"
+                                               class="btn btn-outline-info btn-xs">
+                                                View
+                                            </a>
+                            
+                                            <?php if($user->status == 'Pending'): ?>
+                                                <a href="<?php echo e(route('invoice-status-update', $user->id)); ?>"
+                                                   class="btn btn-outline-success btn-xs">
+                                                    Confirm
+                                                </a>
+                                            <?php else: ?>
+                                                <a class="btn btn-primary btn-xs"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#approvalModal<?php echo e($user->id); ?>">
+                                                    Receive Payment
+                                                </a>
+                            
+                                                <a class="btn btn-info btn-xs"
+                                                   data-bs-toggle="modal"
+                                                   data-bs-target="#approvalModal_payment<?php echo e($user->id); ?>">
+                                                    Payment Details
+                                                </a>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            
+                                <tfoot class="table-secondary fw-bold">
+                                    <tr>
+                                        <td colspan="5" class="text-end">TOTAL</td>
+                                        <td><?php echo e(number_format($grandTotalQty, 2)); ?></td>
+                                        <td><?php echo e(number_format($grandTotalAmount, 2)); ?></td>
+                                        <td><?php echo e(number_format($grandTotalPaid, 2)); ?></td>
+                                        <td><?php echo e(number_format($grandTotalRemained, 2)); ?></td>
+                                        <td colspan="3"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                            
+                            <?php else: ?>
+                            <div class="alert alert-danger">
+                                No Records Found
+                            </div>
+                            <?php endif; ?>
+                            
 					</div>
 
                         </div>
@@ -245,15 +278,15 @@
                         <?php
 if (! isset($_instance)) {
     $html = \Livewire\Livewire::mount('sales-management.oparate-sales',['Customers_details'=>$Customers])->html();
-} elseif ($_instance->childHasBeenRendered('IcCHtod')) {
-    $componentId = $_instance->getRenderedChildComponentId('IcCHtod');
-    $componentTag = $_instance->getRenderedChildComponentTagName('IcCHtod');
+} elseif ($_instance->childHasBeenRendered('8kCQimi')) {
+    $componentId = $_instance->getRenderedChildComponentId('8kCQimi');
+    $componentTag = $_instance->getRenderedChildComponentTagName('8kCQimi');
     $html = \Livewire\Livewire::dummyMount($componentId, $componentTag);
-    $_instance->preserveRenderedChild('IcCHtod');
+    $_instance->preserveRenderedChild('8kCQimi');
 } else {
     $response = \Livewire\Livewire::mount('sales-management.oparate-sales',['Customers_details'=>$Customers]);
     $html = $response->html();
-    $_instance->logRenderedChild('IcCHtod', $response->id(), \Livewire\Livewire::getRootElementTagName($html));
+    $_instance->logRenderedChild('8kCQimi', $response->id(), \Livewire\Livewire::getRootElementTagName($html));
 }
 echo $html;
 ?> 

@@ -71,7 +71,10 @@
                                     <td>{{$user->email}}</td>
                                     <td>{{$user->role}}</td>
                                     <td>{{$user->status}}</td>
-                                    <td>{{$user->office_location}}</td>
+                                    <td>{{$user->office_location}} | 
+                                        {{ \App\Http\Controllers\Stock\ProductsController::storeName($user->office_location) }}
+
+                                    </td>
                                     <td>
                                     <a  class="btn btn-primary btn-xs" data-bs-toggle="modal" data-bs-target="#approvalModal{{$user->id}}"><i class='fa fa-tags'></i> Store</a>
                                     @if($user->status == 'Active')
@@ -276,7 +279,7 @@
                                     <option value='{{strtoupper($s->id)}}'>{{strtoupper($s->name)}}</option>
                                     @endforeach
 								</select>
-                                <i>Previous Store {{ $user->first_name }}</i>
+                                {{-- <i>Previous Store {{ $user->first_name }}</i> --}}
                                 <input type="hidden" name="user_id"value="{{$user->id}}">
                                 
                     </div>

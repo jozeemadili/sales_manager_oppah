@@ -10,6 +10,15 @@ use App\Http\Controllers\Payments\PaymentsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Tests\OpenAIs\DalleControllers;
 
+use App\Http\Controllers\WhatsAppController;
+use App\Http\Controllers\WhatsAppGatewayController;
+
+Route::post('/send-whatsapp', [WhatsAppController::class, 'send']);
+Route::post('/call-back-whatsapp', [WhatsAppController::class, 'send']);
+
+Route::post('v1/whatsapp/callback', [WhatsAppGatewayController::class, 'replyCustomer']);
+Route::get('v1/whatsapp/callback', [WhatsAppGatewayController::class, 'returnChallenge']);
+
 Route::get("/Test/Dalle/Test", [DalleControllers::class, 'test']);
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

@@ -75,6 +75,8 @@
                                     <th>Going Fee</th>
                                     <th>Return Fee</th>
                                     <th>Total Fee</th>
+                                    <th>Status</th>
+                                    
                                     <th>Created By</th>
                                     <th>Created Date</th>
                                     <th>Action</th>
@@ -88,7 +90,7 @@
                                         <td><strong><?php echo e($route->trip_no); ?></strong></td>
                                         <td><?php echo e(\Carbon\Carbon::parse($route->route_date)->format('d M Y')); ?></td>
                                         <td><?php echo e($route->our_truck->plate_no ?? 'N/A'); ?></td>
-                                        <td><?php echo e($route->our_truck->user->first_name ?? 'Unassigned'); ?></td>
+                                        <td><?php echo e($route->our_truck->driver->first_name ?? 'Unassigned'); ?></td>
                                         <td><?php echo e($route->going_customer); ?></td>
                                         <td><?php echo e($route->return_customer ?? '-'); ?></td>
                                         <td><?php echo e(number_format($route->going_transport_fee ?? 0, 2)); ?></td>
@@ -100,9 +102,22 @@
                                             )); ?>
 
                                         </td>
+                                        <td><?php echo e($route->status); ?></td>
                                         <td><?php echo e($route->user->first_name); ?></td>
                                         <td><?php echo e(\Carbon\Carbon::parse($route->created_date)->format('d M Y h:i A')); ?></td>
-                                        <td> <div class="pull-left"> <a href='<?php echo Route('route-preview', ['id' => $route->id]); ?>' class='btn btn-outline-info btn-xs'> view </a></td>
+                                        <td> 
+                                            <div class="pull-left"> <a href='<?php echo Route('route-preview', ['id' => $route->id]); ?>' class='btn btn-outline-info btn-xs'> view </a>
+                                                
+                                                <?php if($route->status == 'Pending'): ?>
+                                                <div class="pull-right">
+                                                    <a href="<?php echo Route('delete-unsubmited-route', ['id' => $route->id, 'status' => 'Inactive']); ?>" 
+                                                       class="btn btn-outline-danger btn-xs"
+                                                       onclick="return confirm('Are you sure you want to delete all inventory data?')">
+                                                       Delete <i class="icofont icofont-ui-delete"></i>
+                                                    </a>
+                                                  </div>
+                                                <?php endif; ?>
+                                        </td>
                                     </tr>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </tbody>
@@ -155,16 +170,45 @@
                         
 
                         <div class="col-md-4">
+                            <?php if(Auth::user()->role == 'ADMIN'): ?>
                             <div class="form-group">
                                 <label>Truck</label>
                                 <select class="form-control" name="truck_id" required>
                                     <option value="">--- Select Truck ---</option>
                                     <?php $__currentLoopData = $OurTruck; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $truck): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                        <option value="<?php echo e($truck->id); ?>"><?php echo e($truck->plate_no); ?> | <?php echo e($truck->user->first_name); ?></option>
+                                        <option value="<?php echo e($truck->id); ?>">
+                                            <?php echo e($truck->plate_no); ?> | <?php echo e($truck->driver?->first_name ?? 'Unassigned'); ?>
+
+                                        </option>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
                             </div>
+                
+                        <?php elseif(Auth::user()->role == 'Driver'): ?>
+                            <?php
+                                // Since controller limits trucks by driver, we just grab the first (or only) one
+                                $truck = $OurTruck->first();
+                            ?>
+                
+                            <div class="form-group">
+                                <label>My Truck</label>
+                                <?php if($truck): ?>
+                                    
+                                    <input type="hidden" name="truck_id" value="<?php echo e($truck->id); ?>">
+                
+                                    
+                                    <input type="text" class="form-control" 
+                                           value="Plate no : <?php echo e($truck->plate_no); ?>, Driver : <?php echo e($truck->driver?->first_name ?? 'Unassigned'); ?>" 
+                                           readonly>
+                                <?php else: ?>
+                                    <input type="text" class="form-control" value="No truck assigned" readonly>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
+                        
+
                         </div>
+
                     </div>
 
                     <hr>
@@ -186,26 +230,21 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Going Transport Fee</label>
                                 <input type="number" step="0.01" class="form-control" name="going_transport_fee" placeholder="0.00">
                             </div>
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>Return Transport Fee</label>
                                 <input type="number" step="0.01" class="form-control" name="return_transport_fee" placeholder="0.00">
                             </div>
                         </div>
 
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label>Total Fee</label>
-                                <input type="number" step="0.01" class="form-control" name="total_fee" placeholder="0.00">
-                            </div>
-                        </div>
+                        
                     </div>
 
                     <input type="hidden" name="created_by" value="<?php echo e(Auth::user()->name); ?>">

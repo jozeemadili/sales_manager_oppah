@@ -59,6 +59,7 @@
 									<th scope="col">Name</th>
                                     <th scope="col">Email</th>
                                     <th scope="col">Mobile</th>
+                                    <th scope="col">Store</th>
                                     <th scope="col">Created By</th>
                                     <th scope="col">Action</th>
 								</tr>
@@ -72,6 +73,7 @@
                                     <td><a href="<?php echo e(Route('customer-profile', ['id' => $user->id])); ?>"><small><?php echo e(strtoupper($user->name)); ?></small></a></td>
                                     <td><a href=""><small><?php echo e($user->email); ?></small></a></td>
                                     <td><?php echo e($user->phone); ?></td>
+                                    <td><?php echo e($user->store->name); ?></td>
                                     <!-- <td><?php echo e($user->user->first_name); ?></td> -->
                                     <td>
                                     <?php if($user->status == 'Active'): ?>

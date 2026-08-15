@@ -18,7 +18,18 @@
                     <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="bar-chart"></i><span>Summary</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'block' : '' }};">
-                            <li><a href="{{route('home')}}" class="{{routeActive('home')}}"> - Summary</a></li>
+                            @if(Auth::user()->role == 'Mbao' || Auth::user()->role == 'ADMIN')
+                            <li><a href="{{route('home')}}" class="{{routeActive('home')}}"> - Summary Mbao</a></li>
+                            @endif
+
+                            @if(Auth::user()->role == 'ADMIN' || Auth::user()->role == 'Driver')
+                            <li><a href="{{route('home-truck')}}" class="{{routeActive('home-truck')}}"> - Summary Trucks</a></li>
+                            @endif
+
+                            @if(Auth::user()->role == 'Hardware' || Auth::user()->role == 'ADMIN')
+                            <li><a href="{{route('home-hardcore')}}" class="{{routeActive('home-hardcore')}}"> - Summary Hardware</a></li>
+                            @endif
+
                             <!-- <li><a href="{{route('home-hotel')}}" class="{{routeActive('home-hotel')}}">  - Summary hotel </a></li> -->
                           
                         </ul>
@@ -42,9 +53,11 @@
                         </ul>
                     </li> -->
                     @endif
-                   
+                    
+                @if(Auth::user()->role != 'Driver')
+                @if(Auth::user()->role == 'Mbao' || Auth::user()->role == 'ADMIN')
                   <li class="dropdown">
-                        <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Store & Inventory</span></a>
+                        <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Inventory (mbao)</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
                         <li><a href="{{route('stores-management')}}" class="{{routeActive('stores-management')}}">  - Stores</a></li>
                         <li><a href="{{route('categories-management')}}" class="{{routeActive('categories-management')}}">  - Category</a></li>
@@ -59,6 +72,30 @@
                         <li><a href="#" class="#"> - Sales Report</a></li> -->
                         </ul>
                     </li>
+                    @endif
+                    @if(Auth::user()->role == 'Hardware' || Auth::user()->role == 'ADMIN')
+                    <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Inventory (hard ware)</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
+                        <li><a href="{{route('stores-management-tuli')}}" class="{{routeActive('stores-management-tuli')}}">  - Stores</a></li>
+                        <li><a href="{{route('categories-management-tuli')}}" class="{{routeActive('categories-management-tuli')}}">  - Category</a></li>
+                        <li><a href="{{route('invetories-management-tuli')}}" class="{{routeActive('invetories-management-tuli')}}">  - Invetories</a></li>
+                        <li><a href="{{route('my-suppliers-tuli')}}" class="{{routeActive('my-suppliers-tuli')}}">  - My Suppliers</a></li>
+                        <li><a href="{{route('expenses-management-tuli')}}" class="{{routeActive('expenses-management-tuli')}}">  - Expenses</a></li>
+                        <li><a href="{{route('product-registration-tuli')}}" class="{{routeActive('product-registration-tuli')}}">  - Stock Management</a></li>
+                        <!-- <li><a href="{{route('operate-sale')}}" class="{{routeActive('operate-sale')}}">  - Operate Sale</a></li> -->
+                        <li><a href="{{route('customers-management-tuli')}}" class="{{routeActive('customers-management-tuli')}}">  - Sales/Customers</a></li>
+                        <li>
+                            <a href="{{ route('quick-sale') }}" class="{{ routeActive('quick-sale') }}">
+                                - Quick / Cash Sale
+                            </a>
+                        </li>
+                        <li><a href="{{route('sales-report-tuli')}}" class="{{routeActive('sales-report-tuli')}}">  - Sales</a></li>
+                        <!-- <li><a href="#" class="#"> - Operate Sales</a></li>
+                        <li><a href="#" class="#"> - Sales Report</a></li> -->
+                        </ul>
+                    </li>
+                    @endif
                    
                      <!-- <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Hotel  Management</span></a>
@@ -81,6 +118,7 @@
                     </li> -->
                    
                     @endif
+
                     <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Reports</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
@@ -90,17 +128,47 @@
                         <li><a href="{{route('product-transfered')}}" class="{{routeActive('product-transfered')}}">  - Product Transfered</a></li>
                         </ul>
                     </li>
+                    @endif
+
+                    @if(Auth::user()->role == 'Driver')
                     <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Logistics</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
                        
-                        <li><a href="{{route('truck-drivers')}}" class="{{routeActive('truck-drivers')}}">  - Trucks & Drivers</a></li>
+                        {{-- <li><a href="{{route('truck-drivers')}}" class="{{routeActive('truck-drivers')}}">  - Trucks & Drivers</a></li> --}}
+                       
+                        {{-- @if(Auth::user()->role == 'ADMIN' || Auth::user()->role == 'Driver') --}}
                         <li><a href="{{route('trips-management')}}" class="{{routeActive('trips-management')}}">  - Trips</a></li>
+                        <li><a href="{{route('truck-reports')}}" class="{{routeActive('truck-reports')}}">  - Truck Reports</a></li>
+                        {{-- <li><a href="{{route('truck-ejy')}}" class="{{routeActive('truck-ejy')}}">  - Report for T821EJY</a></li> --}}
+                        {{-- @endif --}}
+                        {{-- <li><a href="{{route('bank-deposit')}}" class="{{routeActive('bank-deposit')}}">  - Bank Deposit</a></li> --}}
                         {{-- <li><a href="{{route('sales-report')}}" class="{{routeActive('sales-report')}}">  - Sales</a></li>
                           <li><a href="{{route('product-edited')}}" class="{{routeActive('product-edited')}}">  - Product Edited</a></li>
                         <li><a href="{{route('product-transfered')}}" class="{{routeActive('product-transfered')}}">  - Product Transfered</a></li> --}}
                         </ul>
                     </li>
+                    @endif
+
+                    @if(Auth::user()->role == 'ADMIN')
+                    <li class="dropdown">
+                        <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Logistics</span></a>
+                        <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
+                       
+                        <li><a href="{{route('truck-drivers')}}" class="{{routeActive('truck-drivers')}}">  - Trucks & Drivers</a></li>
+                       
+                        <li><a href="{{route('trips-management')}}" class="{{routeActive('trips-management')}}">  - Trips</a></li>
+                        <li><a href="{{route('truck-reports')}}" class="{{routeActive('truck-reports')}}">  - Truck Reports</a></li>
+                        <li><a href="{{route('truck-ejy')}}" class="{{routeActive('truck-ejy')}}">  - Report for T821EJY</a></li>
+                        <li><a href="{{route('truck-erw')}}" class="{{routeActive('truck-erw')}}">  - Report for T343ERW</a></li>
+                       
+                        <li><a href="{{route('bank-deposit')}}" class="{{routeActive('bank-deposit')}}">  - Bank Deposit</a></li>
+                        {{-- <li><a href="{{route('sales-report')}}" class="{{routeActive('sales-report')}}">  - Sales</a></li>
+                          <li><a href="{{route('product-edited')}}" class="{{routeActive('product-edited')}}">  - Product Edited</a></li>
+                        <li><a href="{{route('product-transfered')}}" class="{{routeActive('product-transfered')}}">  - Product Transfered</a></li> --}}
+                        </ul>
+                    </li>
+                    @endif
                     <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/security/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="settings"></i><span>Security & Settings</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/security/*')) ? 'block' : '' }};">

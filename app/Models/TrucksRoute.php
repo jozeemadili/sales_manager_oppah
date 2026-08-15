@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property Carbon $route_date
  * @property string $trip_no
+ * @property string $status
  * @property string $going_customer
  * @property string|null $return_customer
  * @property float|null $going_transport_fee
@@ -57,7 +58,8 @@ class TrucksRoute extends Model
 		'total_fee',
 		'created_by',
 		'created_date',
-		'truck_id'
+		'truck_id',
+		'status'
 	];
 
 	public function our_truck()
@@ -68,5 +70,15 @@ class TrucksRoute extends Model
 	public function user()
 	{
 		return $this->belongsTo(User::class, 'created_by');
+	}
+
+	public function routePlans()
+	{
+		return $this->hasMany(RoutePlan::class, 'route_id');
+	}
+
+	public function expensesRecords()
+	{
+		return $this->hasMany(ExpensesRecordsTruck::class, 'route_id');
 	}
 }

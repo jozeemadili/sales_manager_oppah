@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Expense;
 use App\Models\Inventory;
+use App\Models\Store;
 use Illuminate\Http\Request;
 use App\Models\Branch;
 use Illuminate\Support\Facades\Auth;
@@ -21,8 +22,11 @@ class CategoriesController extends Controller
     {
             $Branch = Inventory::where('company_id',Auth::user()->company_id)->orderBy('id','desc')->paginate(10);
             $companyNames = Inventory::where('company_id', Auth::user()->company_id)->distinct()->pluck('company_name');
+            $companystore = Store::orderBy('id', 'desc')->get();
 
-           return view('admin.sales_management.inventory-registration',['Branch' => $Branch,'companyNames'=>$companyNames]);
+            // dd($companystore);
+
+           return view('admin.sales_management.inventory-registration',['Branch' => $Branch,'companyNames'=>$companyNames,'companystore'=>$companystore]);
     }
     // public function getmySuppliers()
     // {
@@ -101,6 +105,7 @@ class CategoriesController extends Controller
         'status'          => 'Active',
         'reg_at'          => now(),
         'reg_by'          => Auth::id(),
+        'store_id'        => intval($request->store_id),
     ]);
 
     return redirect()

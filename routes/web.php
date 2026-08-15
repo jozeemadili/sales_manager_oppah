@@ -10,9 +10,16 @@ use App\Http\Controllers\Stock\CustomersController;
 use App\Http\Controllers\Stock\InvoiceController;
 use App\Http\Controllers\Stock\LogisticsController;
 
+use App\Http\Controllers\WhatsAppGatewayController;
+
+
 
 use App\Http\Controllers\Stock\ProductsController;
 use App\Http\Controllers\Stock\StoresController;
+use App\Http\Controllers\Tuli\TuliStoresController;
+use App\Http\Controllers\Tuli\inventoryManagentController;
+
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Auth\PortalUsersController;
 
@@ -23,6 +30,9 @@ use App\Http\Controllers\API\Auth\PortalUsersController;
 
 //Portal Users Auth
 Route::get('/', [PortalUsersController::class, 'index'])->name('/');
+Route::get('/date', function () {
+    return view('date');
+});
 Route::post('/portal/auth', [PortalUsersController::class, 'loginWeb']);
 
 Route::get('/portal/auth', [PortalUsersController::class, 'index'])->name('login');
@@ -33,12 +43,18 @@ Route::post('/forget-password', function(){
 
 Route::get('/how-to-use', [PortalUsersController::class, 'howToUse'])->name('how-to-use');
 Route::get('/{id}',[InvoiceController::class, 'download'])->name('free-quotation-download');
+Route::get('/l/{id}',[LogisticsController::class, 'download'])->name('free-ledger-download');
 
 Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
 {
     Route::get('logout',[PortalUsersController::class, 'logout'])->name('logout');
-    Route::view('dashboard', 'admin.dashboard.home')->name('home');
+    Route::get('/dashboard', [PortalUsersController::class, 'indexTest'])->name('home');
+
+    
+    
     Route::view('dashboard-hotel', 'admin.dashboard.home-hotel')->name('home-hotel');
+    Route::view('dashboard-truck', 'admin.dashboard.home-truck')->name('home-truck');
+    Route::view('dashboard-hardcore', 'admin.dashboard.home-hardware')->name('home-hardcore');
     Route::view('summary', 'admin.dashboard.general_summary')->name('general');
     // my routes
    
@@ -76,11 +92,42 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
     //branches managemnt 
     Route::get('stores/management', [StoresController::class, 'get'])->name('stores-management');
     Route::post('add/stores', [StoresController::class, 'register'])->name('add-stores');
+    Route::post('add/stores/tuli', [TuliStoresController::class, 'register'])->name('add-stores-tuli');
+    Route::get('store/status/update/{id}/{status}', [TuliStoresController::class, 'updateUserStatus'])->name('store-status-update');
+
+
+    Route::get('stores/management/tuli', [TuliStoresController::class, 'get'])->name('stores-management-tuli');
 
     //branches managemnt 
     Route::get('categories/management', [CategoriesController::class, 'get'])->name('categories-management');
-    
+    Route::get('categories/management/tuli', [inventoryManagentController::class, 'get'])->name('categories-management-tuli');
+    Route::post('add/categories/tuli', [inventoryManagentController::class, 'register'])->name('add-categories-tuli');
+    Route::get('category/status/update/{id}/{status}', [inventoryManagentController::class, 'updateCategoryStatus'])->name('category-status-update');
+    Route::get('invetories/management/tuli', [inventoryManagentController::class, 'getInventories'])->name('invetories-management-tuli');
+    Route::post('add/inventory/tuli', [inventoryManagentController::class, 'registerInvetories'])->name('add-inventory-tuli');
+    Route::get('inventory/preview/tuli/{id}',[inventoryManagentController::class, 'InventoryPreview'])->name('inventory-preview-tuli');
+    Route::post('record/expense/tuli', [inventoryManagentController::class, 'registerNewExpenses'])->name('record-expense-tuli');
+    Route::post('add/product/inventory/tuli', [inventoryManagentController::class, 'registerInventory'])->name('add-product-inventory-tuli');
+    Route::get('send/stock/tuli/{id}', [inventoryManagentController::class, 'sendProductsTostock'])->name('send-stock-tuli');
     Route::post('add/categories', [CategoriesController::class, 'register'])->name('add-categories');
+    Route::get('my/suppliers/tuli', [inventoryManagentController::class, 'getmySuppliers'])->name('my-suppliers-tuli');
+    Route::post('my/suppliers/tuli', [inventoryManagentController::class, 'getmySuppliers'])->name('my-suppliers-tuli');
+    Route::get('expenses/management/tuli', [inventoryManagentController::class, 'getExpensies'])->name('expenses-management-tuli');
+    Route::post('add/expense/tuli', [inventoryManagentController::class, 'registerExpenses'])->name('add-expense-tuli');
+    Route::get('product/registration/tuli', [inventoryManagentController::class, 'getAllProducts'])->name('product-registration-tuli');
+    Route::get('customers/management/tuli', [inventoryManagentController::class, 'getAllCustomers'])->name('customers-management-tuli');
+    Route::post('add/customer/tuli', [inventoryManagentController::class, 'registerCustomer'])->name('add-customer-tuli');
+    Route::get('/customer/profile/tuli/{id}',[inventoryManagentController::class, 'profile'])->name('customer-profile-tuli');
+    Route::get('tuli/invoice/status/update/{id}',[inventoryManagentController::class, 'invoiceStatusUpdate'])->name('invoice-status-update-tuli');
+    Route::post('edit/tuli/invoice/price', [inventoryManagentController::class, 'invoiceStatusUpdatePaid'])->name('receive-invoice-payment-tuli');
+    Route::get('sales/invoice/preview/tuli/{id}',[inventoryManagentController::class, 'invoicePreviewTuli'])->name('invoice-preview-tuli');
+    Route::post('edit/item/invoice/qty/tuli', [inventoryManagentController::class, 'EdititemInvoiceQty'])->name('edit-item-invoice-qty-tuli');
+    Route::post('edit/item/invoice/tuli', [inventoryManagentController::class, 'EdititemInvoice'])->name('edit-item-invoice-price-tuli');
+    Route::get('sales/report/tuli', [inventoryManagentController::class, 'salesReport'])->name('sales-report-tuli');
+
+    Route::get('/quick-sale', function () {
+        return view('admin.tuli_sales_management.quick-sale');
+    })->name('quick-sale');
 
     Route::post('add/inventory', [CategoriesController::class, 'registerInvetories'])->name('add-inventory');
     Route::post('add/expense', [CategoriesController::class, 'registerExpenses'])->name('add-expense');
@@ -89,20 +136,42 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
     Route::get('expenses/management', [CategoriesController::class, 'getExpensies'])->name('expenses-management');
 
    
+    
+   
 
     Route::get('my/suppliers', [CategoriesController::class, 'getmySuppliers'])->name('my-suppliers');
     Route::post('my/suppliers', [CategoriesController::class, 'getmySuppliers'])->name('my-suppliers');
 
+    Route::get('bank/deposit', [LogisticsController::class, 'getBankDeposit'])->name('bank-deposit');
+    Route::post('/bank-deposits/store', [LogisticsController::class, 'storeBankDeposit'])->name('bank-deposits.store');
+
+    
     
     Route::get('trips/management', [LogisticsController::class, 'getTriproutes'])->name('trips-management');
     Route::post('/add-truck-route', [LogisticsController::class, 'saveTriproutes'])->name('add-truck-route');
     Route::get('/generate-trip-no', [LogisticsController::class, 'generateTripNoAjax'])->name('generate-trip-no');
 
+    Route::get('truck/reports', [LogisticsController::class, 'getTriproutesReports'])->name('truck-reports');
+    Route::get('truck/ejy', [LogisticsController::class, 'getTriproutesReports'])->name('truck-ejy');
+    Route::get('truck/erw', [LogisticsController::class, 'getTriproutesReports'])->name('truck-erw');
+    
+    // truck-reports
 
     Route::get('truck/drivers', [LogisticsController::class, 'get'])->name('truck-drivers');
     Route::post('/trucks/add', [LogisticsController::class, 'saveTruck'])->name('add-truck');
     Route::post('record/expense/truck', [LogisticsController::class, 'registerNewExpensesTruck'])->name('record-expense-truck');
     Route::post('/record-route-plan', [LogisticsController::class, 'saveReoutePlan'])->name('record-route-plan');
+    Route::get('/delete-unsubmited-route/{id}/{status}', [LogisticsController::class, 'deleteUnsubmittedRoute'])->name('delete-unsubmited-route');
+    Route::get('/delete-unsubmited-plam/{id}/{status}', [LogisticsController::class, 'deleteUnsubmittedRoutePlan'])->name('delete-unsubmited-plam');
+    Route::get('/delete-unsubmited-expense/{id}/{status}', [LogisticsController::class, 'deleteUnsubmittedExpenseTrip'])->name('delete-unsubmited-expense');
+    Route::get('send/approve/{id}', [LogisticsController::class, 'sendProductsToApprove'])->name('send-approve');
+    Route::get('ledger/invoice/download/{id}',[LogisticsController::class, 'download'])->name('invoice-download-ledger');
+
+    Route::get('send/approve/deposit/{id}', [LogisticsController::class, 'sendProductsToApproveDeposit'])->name('send-approve-deposit');
+
+    Route::get('/delete-unsubmited-deposit/{id}/{status}', [LogisticsController::class, 'deleteUnsubmittedDeposit'])->name('delete-unsubmited-deposit');
+
+    
 
     Route::get('route/preview/{id}',[LogisticsController::class, 'RoutePreview'])->name('route-preview');
 
@@ -129,6 +198,9 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
 
    
     Route::get('sales/invoice/download/{id}',[InvoiceController::class, 'download'])->name('invoice-download');
+
+    Route::get('pending/invoice/download/{id}',[InvoiceController::class, 'printPendingInvoicesPdf'])->name('pending-invoice-download');
+  
     Route::get('hotel/invoice/download/{id}',[InvoiceController::class, 'downloadHotelInvoice'])->name('hotel-invoice-download');
     Route::get('sales/invoice/preview/{id}',[InvoiceController::class, 'invoicePreview'])->name('invoice-preview');
     Route::get('sales/invoice/hotel/preview/{id}',[InvoiceController::class, 'invoicePreviewHotel'])->name('hotel-invoice-preview');
@@ -171,6 +243,8 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
     Route::post('add/product', [ProductsController::class, 'register'])->name('add-product');
     Route::post('add/product/inventory', [ProductsController::class, 'registerInventory'])->name('add-product-inventory');
     
+
+
     Route::post('record/expense', [ProductsController::class, 'registerNewExpenses'])->name('record-expense');
     
     Route::get('operate/sale', [ProductsController::class, 'oparateSale'])->name('operate-sale');

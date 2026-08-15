@@ -73,7 +73,11 @@
                                     <td><?php echo e($user->email); ?></td>
                                     <td><?php echo e($user->role); ?></td>
                                     <td><?php echo e($user->status); ?></td>
-                                    <td><?php echo e($user->office_location); ?></td>
+                                    <td><?php echo e($user->office_location); ?> | 
+                                        <?php echo e(\App\Http\Controllers\Stock\ProductsController::storeName($user->office_location)); ?>
+
+
+                                    </td>
                                     <td>
                                     <a  class="btn btn-primary btn-xs" data-bs-toggle="modal" data-bs-target="#approvalModal<?php echo e($user->id); ?>"><i class='fa fa-tags'></i> Store</a>
                                     <?php if($user->status == 'Active'): ?>
@@ -279,7 +283,7 @@
                                     <option value='<?php echo e(strtoupper($s->id)); ?>'><?php echo e(strtoupper($s->name)); ?></option>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 								</select>
-                                <i>Previous Store <?php echo e($user->first_name); ?></i>
+                                
                                 <input type="hidden" name="user_id"value="<?php echo e($user->id); ?>">
                                 
                     </div>
