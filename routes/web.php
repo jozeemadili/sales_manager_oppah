@@ -24,7 +24,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\Auth\PortalUsersController;
 
 
-@include_once('admin_web.php');
+// admin_web.php was unused admin-theme demo routes (ui-kits, ecommerce
+// templates, etc.) referenced only by unused alternate layouts
+// (modern-layout/compact-layout/default-layout). Quarantined to
+// _legacy/routes/admin_web.php per ammendments.md §1/§4 — not included.
 // passwordHash
 
 
@@ -152,9 +155,13 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
     Route::get('/generate-trip-no', [LogisticsController::class, 'generateTripNoAjax'])->name('generate-trip-no');
 
     Route::get('truck/reports', [LogisticsController::class, 'getTriproutesReports'])->name('truck-reports');
+    // truck-ejy/truck-erw are per-vehicle routes hardcoded to plates
+    // T821EJY/T343ERW (see sidebar.blade.php). Adding a third truck means
+    // adding a third route here — not parameterized in this pass
+    // (ammendments.md §4) to avoid touching sidebar route names.
     Route::get('truck/ejy', [LogisticsController::class, 'getTriproutesReports'])->name('truck-ejy');
     Route::get('truck/erw', [LogisticsController::class, 'getTriproutesReports'])->name('truck-erw');
-    
+
     // truck-reports
 
     Route::get('truck/drivers', [LogisticsController::class, 'get'])->name('truck-drivers');
@@ -176,7 +183,11 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
     Route::get('route/preview/{id}',[LogisticsController::class, 'RoutePreview'])->name('route-preview');
 
     
-    //customer managemnt 
+    //customer managemnt
+    // Same route name on both verbs is intentional: GET renders the list,
+    // POST (from the on-page search form) re-renders it filtered. Do not
+    // "deduplicate" — Blade's route('customers-management') calls assume
+    // this pair exists.
     Route::get('customers/management', [CustomersController::class, 'get'])->name('customers-management');
     Route::post('customers/management', [CustomersController::class, 'searchCustomer'])->name('customers-management');
     Route::post('add/customer', [CustomersController::class, 'register'])->name('add-customer');
