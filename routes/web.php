@@ -56,6 +56,7 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
 
     
     
+    Route::view('dashboard-overview', 'admin.dashboard.overview')->name('home-overview');
     Route::view('dashboard-hotel', 'admin.dashboard.home-hotel')->name('home-hotel');
     Route::view('dashboard-truck', 'admin.dashboard.home-truck')->name('home-truck');
     Route::view('dashboard-hardcore', 'admin.dashboard.home-hardware')->name('home-hardcore');

@@ -18,6 +18,10 @@
                     <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="bar-chart"></i><span>Summary</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'block' : '' }};">
+                            @if(Auth::user()->role == 'ADMIN')
+                            <li><a href="{{route('home-overview')}}" class="{{routeActive('home-overview')}}"> - Overview (All Modules)</a></li>
+                            @endif
+
                             @if(Auth::user()->role == 'Mbao' || Auth::user()->role == 'ADMIN')
                             <li><a href="{{route('home')}}" class="{{routeActive('home')}}"> - Summary Mbao</a></li>
                             @endif
