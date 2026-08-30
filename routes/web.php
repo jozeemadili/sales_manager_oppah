@@ -18,6 +18,7 @@ use App\Http\Controllers\Stock\ProductsController;
 use App\Http\Controllers\Stock\StoresController;
 use App\Http\Controllers\Tuli\TuliStoresController;
 use App\Http\Controllers\Tuli\inventoryManagentController;
+use App\Http\Controllers\Tuli\CategoriesController as TuliCategoriesController;
 
 
 use Illuminate\Support\Facades\Route;
@@ -103,20 +104,20 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
 
     //branches managemnt 
     Route::get('categories/management', [CategoriesController::class, 'get'])->name('categories-management');
-    Route::get('categories/management/tuli', [inventoryManagentController::class, 'get'])->name('categories-management-tuli');
-    Route::post('add/categories/tuli', [inventoryManagentController::class, 'register'])->name('add-categories-tuli');
-    Route::get('category/status/update/{id}/{status}', [inventoryManagentController::class, 'updateCategoryStatus'])->name('category-status-update');
-    Route::get('invetories/management/tuli', [inventoryManagentController::class, 'getInventories'])->name('invetories-management-tuli');
-    Route::post('add/inventory/tuli', [inventoryManagentController::class, 'registerInvetories'])->name('add-inventory-tuli');
+    Route::get('categories/management/tuli', [TuliCategoriesController::class, 'get'])->name('categories-management-tuli');
+    Route::post('add/categories/tuli', [TuliCategoriesController::class, 'register'])->name('add-categories-tuli');
+    Route::get('category/status/update/{id}/{status}', [TuliCategoriesController::class, 'updateCategoryStatus'])->name('category-status-update');
+    Route::get('invetories/management/tuli', [TuliCategoriesController::class, 'getInventories'])->name('invetories-management-tuli');
+    Route::post('add/inventory/tuli', [TuliCategoriesController::class, 'registerInvetories'])->name('add-inventory-tuli');
     Route::get('inventory/preview/tuli/{id}',[inventoryManagentController::class, 'InventoryPreview'])->name('inventory-preview-tuli');
     Route::post('record/expense/tuli', [inventoryManagentController::class, 'registerNewExpenses'])->name('record-expense-tuli');
     Route::post('add/product/inventory/tuli', [inventoryManagentController::class, 'registerInventory'])->name('add-product-inventory-tuli');
     Route::get('send/stock/tuli/{id}', [inventoryManagentController::class, 'sendProductsTostock'])->name('send-stock-tuli');
     Route::post('add/categories', [CategoriesController::class, 'register'])->name('add-categories');
-    Route::get('my/suppliers/tuli', [inventoryManagentController::class, 'getmySuppliers'])->name('my-suppliers-tuli');
-    Route::post('my/suppliers/tuli', [inventoryManagentController::class, 'getmySuppliers'])->name('my-suppliers-tuli');
-    Route::get('expenses/management/tuli', [inventoryManagentController::class, 'getExpensies'])->name('expenses-management-tuli');
-    Route::post('add/expense/tuli', [inventoryManagentController::class, 'registerExpenses'])->name('add-expense-tuli');
+    Route::get('my/suppliers/tuli', [TuliCategoriesController::class, 'getmySuppliers'])->name('my-suppliers-tuli');
+    Route::post('my/suppliers/tuli', [TuliCategoriesController::class, 'getmySuppliers'])->name('my-suppliers-tuli');
+    Route::get('expenses/management/tuli', [TuliCategoriesController::class, 'getExpensies'])->name('expenses-management-tuli');
+    Route::post('add/expense/tuli', [TuliCategoriesController::class, 'registerExpenses'])->name('add-expense-tuli');
     Route::get('product/registration/tuli', [inventoryManagentController::class, 'getAllProducts'])->name('product-registration-tuli');
     Route::get('customers/management/tuli', [inventoryManagentController::class, 'getAllCustomers'])->name('customers-management-tuli');
     Route::post('add/customer/tuli', [inventoryManagentController::class, 'registerCustomer'])->name('add-customer-tuli');
