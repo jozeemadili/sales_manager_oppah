@@ -1,9 +1,8 @@
 <?php
-$baseUrl =  'http://jubileeapiinterface.jubileetanzania.co.tz:8090/api/v2';
-// $baseUrl =  'https://jubileeapiinterface.jubileetanzania.co.tz:8443/api/v2';
+$baseUrl = env('JUBILEE_BASE_URL', 'https://jubileeapiinterface.jubileetanzania.co.tz:8443/api/v2');
 return [
+            'system_code' => env('JUBILEE_SYSTEM_CODE', 'NBC-AGENTS'),
             'endpoints'   => array('submit_motor' => $baseUrl.'/motor/transaction'),
-            'secrets'     => array('Api_Key'      => 'NaGNCbK7o2NsnzzBcU77juOgNBSchi3zEL7mtZgWQ1A5uLL9='),
-            'callbackUrl' => 'https://policypro.co.tz/api/v1/jubilee/callbacks'
+            'secrets'     => array('Api_Key'      => env('JUBILEE_API_KEY', 'BAgbr2BJ89MTXFX86xQ80aALDcQrpD99BSI9hKPv2jJWER--')),
+            'callbackUrl' => env('JUBILEE_CALLBACK_URL', 'https://policypro.co.tz/api/v1/jubilee/callbacks')
        ];
-

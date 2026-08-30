@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'PolicyPro'),
+    'name' => env('APP_NAME', 'Sales Manager Portal'),
 
     /*
     |--------------------------------------------------------------------------
