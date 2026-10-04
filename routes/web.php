@@ -51,6 +51,8 @@ Route::post('/forget-password', function(){
 Route::get('/how-to-use', [PortalUsersController::class, 'howToUse'])->name('how-to-use');
 Route::get('/{id}',[InvoiceController::class, 'download'])->name('free-quotation-download');
 Route::get('/l/{id}',[LogisticsController::class, 'download'])->name('free-ledger-download');
+// Customer statement opened from the QR code on a printed payment reminder (signed, no login)
+Route::get('/s/{id}', [CustomerStatementController::class, 'publicPdf'])->middleware('signed')->name('customer-statement-public');
 
 Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
 {
