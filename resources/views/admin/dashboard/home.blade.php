@@ -62,35 +62,5 @@
         @livewire('components.reports.summary')
     </div>
 
-    <hr class="section-divider">
-
-    <!-- 📊 Sales Chart Section -->
-    <div class="dashboard-section">
-        <div class="dashboard-header mb-3">
-            <h4><i class="icofont icofont-chart-bar-graph"></i> Monthly Sales Performance</h4>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                @livewire('components.reports.salescharts')
-            </div>
-        </div>
-    </div>
-
-    
-  
-    <hr class="section-divider">
-
-    <!-- 🧩 Invoice Status / Performance Section -->
-    <div class="dashboard-section">
-        <div class="dashboard-header mb-3">
-            <h4><i class="icofont icofont-pie-chart"></i> Invoice Status Summary</h4>
-        </div>
-        <div class="row">
-            <div class="col-lg-12">
-                @livewire('components.reports.quotationstatus')
-            </div>
-        </div>
-    </div>
-
 </div>
 @endsection

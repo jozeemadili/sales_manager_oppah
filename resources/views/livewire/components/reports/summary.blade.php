@@ -110,6 +110,18 @@
         </div>
     </div>
     @endif
+
+    <!-- Sales vs Expenses Chart -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Payment Trends</h5>
+        </div>
+        <div class="card-body p-0">
+            <figure class="highcharts-figure">
+                <div id="container_sales"></div>
+            </figure>
+        </div>
+    </div>
     <!-- Summary Cards -->
     <div class="row mb-4">
         
@@ -195,18 +207,6 @@
                     <p>Inactive Customers</p>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Sales Chart -->
-    <div class="card">
-        <div class="card-header">
-            <h5>Payment Trends</h5>
-        </div>
-        <div class="card-body p-0">
-            <figure class="highcharts-figure">
-                <div id="container_sales"></div>
-            </figure>
         </div>
     </div>
 </div>
