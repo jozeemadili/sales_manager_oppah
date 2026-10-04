@@ -555,6 +555,70 @@
                     </div>
                     @endif
 
+
+                    {{-- Full lists behind the totals (same as the dashboard cards and the PDF) --}}
+                    @foreach(['generated_today' => 'Total Generated Amount (Today)', 'paid_today' => 'Total Paid Amount (Today)', 'unpaid_today' => 'Remaining (Unpaid) Amount (Today)'] as $key => $title)
+                        @php $list = $p['lists'][$key]; @endphp
+                        <details class="end-day-section" {{ $key === 'generated_today' ? 'open' : '' }}>
+                            <summary>{{ $title }} &mdash; <strong>{{ $f($list['total']) }}</strong> ({{ $list['count'] }})</summary>
+                            @if(count($list['rows']))
+                            <div class="table-responsive">
+                            @if($key === 'paid_today')
+                                <table class="table table-sm mb-2">
+                                    <thead><tr><th>Time</th><th>Receipt</th><th>Invoice</th><th>Customer</th><th>Channel</th><th>Received By</th><th class="text-end">Amount</th></tr></thead>
+                                    <tbody>
+                                        @foreach($list['rows'] as $r)
+                                        <tr>
+                                            <td>{{ $r['time'] }}</td><td><small>{{ $r['receipt'] }}</small></td>
+                                            <td>@if($r['invoice_id'])<a href="{{ route('invoice-preview', $r['invoice_id']) }}" target="_blank">#{{ $r['invoice_id'] }}</a>@else<span class="badge bg-success">Quick Sale</span>@endif</td>
+                                            <td>{{ strtoupper($r['customer']) }}</td><td><small>{{ $r['channel'] }}</small></td><td>{{ $r['by'] }}</td>
+                                            <td class="text-end">{{ $f($r['amount']) }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <table class="table table-sm mb-2">
+                                    <thead><tr><th>Invoice</th><th>Date</th><th>Customer</th><th>Status</th><th class="text-end">Total</th><th class="text-end">Paid</th><th class="text-end">Remaining</th></tr></thead>
+                                    <tbody>
+                                        @foreach($list['rows'] as $r)
+                                        <tr>
+                                            <td>@if($r['id'])<a href="{{ route('invoice-preview', $r['id']) }}" target="_blank">#{{ $r['id'] }}</a>@else&mdash;@endif</td>
+                                            <td><small>{{ $r['date'] }}</small></td><td>{{ strtoupper($r['customer']) }}</td>
+                                            <td><span class="badge {{ $r['status'] === 'Quick Sale' ? 'bg-success' : 'bg-light text-dark border' }}">{{ $r['status'] }}</span></td>
+                                            <td class="text-end">{{ $f($r['total']) }}</td><td class="text-end">{{ $f($r['paid']) }}</td><td class="text-end">{{ $f($r['remained']) }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @endif
+                            </div>
+                            @else
+                                <div class="text-muted small mb-2">None.</div>
+                            @endif
+                        </details>
+                    @endforeach
+
+                    @php $unpaidAll = $p['lists']['unpaid_all']; @endphp
+                    <details class="end-day-section">
+                        <summary>Total Unpaid Amount (All Time) &mdash; <strong>{{ $f($unpaidAll['total']) }}</strong> ({{ count($unpaidAll['customers']) }} customers)</summary>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-2">
+                                <thead><tr><th>Customer</th><th>Phone</th><th class="text-end">Invoices</th><th class="text-end">Oldest (days)</th><th class="text-end">Total</th><th class="text-end">Paid</th><th class="text-end">Remaining</th></tr></thead>
+                                <tbody>
+                                    @foreach($unpaidAll['customers'] as $c)
+                                    <tr>
+                                        <td><a href="{{ route('customer-statement', $c['id']) }}" target="_blank">{{ strtoupper($c['name']) }}</a></td>
+                                        <td><small>{{ $c['phone'] ? '+255'.$c['phone'] : '' }}</small></td>
+                                        <td class="text-end">{{ $c['invoices'] }}</td><td class="text-end">{{ $c['oldest_days'] }}</td>
+                                        <td class="text-end">{{ $f($c['total']) }}</td><td class="text-end">{{ $f($c['paid']) }}</td><td class="text-end text-danger">{{ $f($c['remained']) }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+
                     @if(count($p['daily_entries']))
                     <h6 class="mt-3">Daily Expenses (Today)</h6>
                     <table class="table table-sm">
@@ -573,7 +637,20 @@
                         <thead><tr><th>Time</th><th>Bank</th><th>Account</th><th>By</th><th class="text-end">Amount</th><th>Slips</th></tr></thead>
                         <tbody>
                             @foreach($p['deposits'] as $d)
-                            <tr><td>{{ $d['time'] }}</td><td>{{ strtoupper($d['bank']) }}</td><td>{{ $d['account'] }}</td><td>{{ $d['by'] }}</td><td class="text-end">{{ $f($d['amount']) }}</td><td>{{ count($d['slips']) }}</td></tr>
+                            <tr>
+                                <td>{{ $d['time'] }}</td><td>{{ strtoupper($d['bank']) }}</td><td>{{ $d['account'] }}</td><td>{{ $d['by'] }}</td><td class="text-end">{{ $f($d['amount']) }}</td>
+                                <td>
+                                    @foreach($d['slips'] as $slip)
+                                        <a href="{{ route('bank-deposit-slip', $slip['id']) }}" target="_blank" class="me-1" title="Open slip">
+                                            @if($slip['image'])
+                                                <img src="{{ route('bank-deposit-slip', $slip['id']) }}" width="70" height="70" style="object-fit: cover;" class="img-thumbnail">
+                                            @else
+                                                <span class="badge bg-danger">PDF slip</span>
+                                            @endif
+                                        </a>
+                                    @endforeach
+                                </td>
+                            </tr>
                             @endforeach
                         </tbody>
                     </table>
@@ -599,6 +676,8 @@
 @push('css')
 <style>
 #container_sales { height: 460px; }
+.end-day-section { border: 1px solid #e5e5e5; border-radius: 6px; padding: 6px 10px; margin-top: 10px; }
+.end-day-section summary { cursor: pointer; font-weight: 600; }
 .summary-clickable { cursor: pointer; transition: transform .15s, box-shadow .15s; }
 .summary-clickable:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.12); }
 .highcharts-figure { width: 100%; margin: 0; padding: 0 10px 10px; }
