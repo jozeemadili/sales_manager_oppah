@@ -391,7 +391,7 @@
                                     <option value='{{strtoupper($s->id)}}'>{{strtoupper($s->name)}}</option>
                                     @endforeach
 									</select>
-                                {{-- <i>Previous Store {{ $user->first_name }}</i> --}}
+                                <i>Previous Store {{ $user->first_name }}</i>
                                 <input type="hidden" name="user_id"value="{{$user->id}}">
 
                     </div>
