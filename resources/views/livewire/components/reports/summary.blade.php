@@ -147,6 +147,20 @@
                         &minus; Inventory expenses {{ $summary['expenses_today'] }}
                         &minus; Daily expenses {{ $summary['daily_today'] }}
                     </small>
+                    <div class="mt-2">
+                        <small>
+                            Deposited today: <strong>{{ $summary['deposited_today'] }}</strong>
+                            &middot; Left to deposit: <strong>{{ $summary['to_deposit'] }}</strong>
+                        </small>
+                    </div>
+                    <div class="mt-2 d-flex justify-content-center gap-2 flex-wrap">
+                        <button type="button" class="btn btn-primary btn-sm" wire:click="openDeposit" @disabled($summary['to_deposit_raw'] <= 0)>
+                            <i class="icofont icofont-bank-alt"></i> Record Bank Deposit
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm" wire:click="showDeposits">
+                            <i class="icofont icofont-papers"></i> View Deposit Slips
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -392,6 +406,106 @@
             </div>
         </div>
     </div>
+
+    <!-- Record bank deposit of today's balance -->
+    <div class="modal fade" id="depositModal" tabindex="-1" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="icofont icofont-bank-alt"></i> Record Bank Deposit &mdash; {{ now()->format('d M Y') }}</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form wire:submit.prevent="saveDeposit">
+                    <div class="modal-body">
+                        <div class="form-group mb-3">
+                            <label class="col-form-label">Amount to deposit (TZS)</label>
+                            <input class="form-control fw-bold fs-5" type="text" value="{{ number_format((float) $depositAmount, 2) }}" readonly>
+                            <small class="text-muted">Today's balance not yet deposited ({{ strtoupper($chartStoreName) }}).</small>
+                            @error('depositAmount')<div class="text-danger small">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 form-group mb-3">
+                                <label class="col-form-label">Bank</label>
+                                <input class="form-control" type="text" wire:model.defer="depositBank" list="depositBanks" placeholder="e.g. CRDB" required>
+                                @error('depositBank')<div class="text-danger small">{{ $message }}</div>@enderror
+                            </div>
+                            <div class="col-md-6 form-group mb-3">
+                                <label class="col-form-label">Account Number</label>
+                                <input class="form-control" type="text" wire:model.defer="depositAccount" list="depositAccounts" required>
+                                @error('depositAccount')<div class="text-danger small">{{ $message }}</div>@enderror
+                            </div>
+                        </div>
+                        <datalist id="depositBanks">
+                            @foreach(collect($depositSuggestions)->pluck('bank')->unique() as $bank)<option value="{{ $bank }}">@endforeach
+                        </datalist>
+                        <datalist id="depositAccounts">
+                            @foreach(collect($depositSuggestions)->pluck('account')->unique() as $account)<option value="{{ $account }}">@endforeach
+                        </datalist>
+                        <div class="form-group">
+                            <label class="col-form-label">Bank Slip(s)</label>
+                            <input class="form-control" type="file" wire:model="depositSlips" multiple accept="image/*,application/pdf">
+                            <div wire:loading wire:target="depositSlips" class="small text-muted mt-1">Uploading&hellip;</div>
+                            @error('depositSlips')<div class="text-danger small">{{ $message }}</div>@enderror
+                            @error('depositSlips.*')<div class="text-danger small">{{ $message }}</div>@enderror
+                            <small class="text-muted d-block">JPG, PNG or PDF, up to 5 MB each.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" type="submit" wire:loading.attr="disabled" wire:target="saveDeposit,depositSlips">Save Deposit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deposits and their slips -->
+    <div class="modal fade" id="depositsListModal" tabindex="-1" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="icofont icofont-papers"></i> Bank Deposits &mdash; {{ strtoupper($chartStoreName) }}</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                            <thead><tr><th>Recorded</th><th>For Day</th><th>Bank</th><th>Account</th><th class="text-end">Amount (TZS)</th><th>By</th><th>Status</th><th>Slips</th></tr></thead>
+                            <tbody>
+                                @forelse($depositList as $dep)
+                                <tr>
+                                    <td><small>{{ $dep['date'] }}</small></td>
+                                    <td>{{ $dep['balance_date'] }}</td>
+                                    <td>{{ strtoupper($dep['bank']) }}</td>
+                                    <td>{{ $dep['account'] }}</td>
+                                    <td class="text-end fw-semibold">{{ number_format($dep['amount'], 2) }}</td>
+                                    <td>{{ $dep['by'] }}</td>
+                                    <td><span class="badge bg-light text-dark border">{{ $dep['status'] }}</span></td>
+                                    <td>
+                                        @foreach($dep['slips'] as $slip)
+                                            <a href="{{ $slip['url'] }}" target="_blank" class="me-1">
+                                                @if($slip['image'])
+                                                    <img src="{{ $slip['url'] }}" width="48" height="48" style="object-fit: cover;" class="img-thumbnail">
+                                                @else
+                                                    <span class="badge bg-danger">PDF</span>
+                                                @endif
+                                            </a>
+                                        @endforeach
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr><td colspan="8" class="text-center text-muted py-4">No deposits recorded yet.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('css')
@@ -438,6 +552,21 @@ document.addEventListener('livewire:load', function () {
         // This site ships Bootstrap 5.0.0-beta2, which has no getOrCreateInstance().
         const el = document.getElementById('summaryDetailModal');
         (bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el)).show();
+    });
+
+    function showModal(id) {
+        const el = document.getElementById(id);
+        (bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el)).show();
+    }
+
+    window.addEventListener('open-deposit-modal', () => showModal('depositModal'));
+    window.addEventListener('open-deposits-list', () => showModal('depositsListModal'));
+    window.addEventListener('deposit-saved', (event) => {
+        const el = document.getElementById('depositModal');
+        const modal = bootstrap.Modal.getInstance(el);
+        if (modal) { modal.hide(); }
+        const text = 'Deposit of ' + event.detail.amount + ' TZS recorded.';
+        if (typeof swal === 'function') { swal({ title: 'Saved', text: text, icon: 'success' }); } else { alert(text); }
     });
 
     Livewire.on('salesUpdated', (data) => {

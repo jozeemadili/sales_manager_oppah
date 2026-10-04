@@ -42,8 +42,15 @@ class BankDepositFile extends Model
 	}
 
 	 // Helper: return full URL preview
+	 public function isImage()
+	 {
+		 return preg_match('/\.(jpe?g|png|gif|webp)$/i', $this->file_path) === 1;
+	 }
+
 	 public function getFileUrlAttribute()
 	 {
-		 return Storage::url($this->file_path);
+		 // Served through the app: the cPanel web root is the project root, so the
+		 // usual public/storage link does not work there.
+		 return route('bank-deposit-slip', $this->id);
 	 }
 }

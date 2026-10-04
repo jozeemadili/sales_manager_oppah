@@ -37,7 +37,8 @@ class BankDeposist extends Model
 	];
 
 	protected $dates = [
-		'deposited_date'
+		'deposited_date',
+		'balance_date',
 	];
 
 	protected $fillable = [
@@ -48,8 +49,15 @@ class BankDeposist extends Model
 		'deposited_date',
 		'file_path',
 		'deposit_origin',
-		'created_at'
+		'created_at',
+		'account_number',
+		'store_id',
+		'source',
+		'balance_date',
 	];
+
+	// Deposits of the Mbao daily balance, recorded from the Mbao dashboard.
+	const SOURCE_MBAO = 'MBAO';
 
 	public function user()
 	{

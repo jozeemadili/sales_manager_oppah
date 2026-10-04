@@ -10,12 +10,17 @@ use App\Models\Store;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithFileUploads;
+use App\Models\BankDeposist;
+use App\Models\BankDepositFile;
 use App\Http\Livewire\SalesManagement\QuickSale;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 
 class Summary extends Component
 {
+    use WithFileUploads;
+
     public $summary = [];
     public $sales = [];
     public $storeId = 'all';
@@ -38,6 +43,14 @@ class Summary extends Component
     public $detailCustomers = [];
 
     const DETAIL_LIMIT = 500;
+
+    // Bank deposit of today's balance
+    public $depositAmount = 0;
+    public $depositBank = '';
+    public $depositAccount = '';
+    public $depositSlips = [];
+    public $depositSuggestions = [];
+    public $depositList = [];
 
 
     public function mount()
@@ -160,6 +173,10 @@ class Summary extends Component
             ->whereBetween('s.date_sold', [$startTime, $endTime])
             ->sum(DB::raw('s.selling_price * s.quantity'));
 
+        $balanceToday = ($sumToday + $quickToday) - ($expensesToday + $dailyToday);
+        $depositedToday = $this->depositedToday();
+        $toDeposit = max(0, round($balanceToday - $depositedToday, 2));
+
         // --- SUMMARY DATA ---
         $this->summary = [
             'sumProduct'       => number_format($sumProduct, 0, '.', ','),
@@ -173,8 +190,11 @@ class Summary extends Component
             'generated_amount' => number_format($invoiceTodayQuery->sum('total_invoice_amount') + $quickToday, 2, '.', ','),
             'paid_amount'      => number_format($sumToday + $quickToday, 2, '.', ','),
             // Balance (Today) = money received today - expenses recorded today.
-            'balance_today_raw' => ($sumToday + $quickToday) - ($expensesToday + $dailyToday),
-            'balance_today'    => number_format(($sumToday + $quickToday) - ($expensesToday + $dailyToday), 2, '.', ','),
+            'balance_today_raw' => $balanceToday,
+            'balance_today'    => number_format($balanceToday, 2, '.', ','),
+            'deposited_today'  => number_format($depositedToday, 2, '.', ','),
+            'to_deposit_raw'   => $toDeposit,
+            'to_deposit'       => number_format($toDeposit, 2, '.', ','),
             'unpaid_amount'    => number_format($invoiceTodayQuery->sum('amount_remained'), 2, '.', ','),
             'unpaid_overall'   => number_format($invoiceQuery->sum('amount_remained'), 2, '.', ','),
             'pending'          => number_format($invoiceTodayQuery->where('status','Pending')->count(), 0, '.', ','),
@@ -280,6 +300,115 @@ class Summary extends Component
             'inventory' => $this->expensesChart,
             'daily' => $this->dailyChart,
         ]);
+    }
+
+    private function mbaoDeposits()
+    {
+        return BankDeposist::where('source', BankDeposist::SOURCE_MBAO)
+            ->when($this->storeId !== 'all', fn ($q) => $q->where('store_id', $this->storeId));
+    }
+
+    private function depositedToday()
+    {
+        return (float) $this->mbaoDeposits()
+            ->whereDate('balance_date', Carbon::today())
+            ->sum('deposited_amount');
+    }
+
+    public function openDeposit()
+    {
+        $this->loadData();
+        $this->resetErrorBag();
+        $this->depositSlips = [];
+        $this->depositAmount = $this->summary['to_deposit_raw'];
+
+        // Suggest the bank/account used last time.
+        $this->depositSuggestions = $this->mbaoDeposits()
+            ->whereNotNull('account_number')
+            ->orderByDesc('id')
+            ->get(['bank_name', 'account_number'])
+            ->unique(fn ($d) => $d->bank_name.'|'.$d->account_number)
+            ->take(10)
+            ->map(fn ($d) => ['bank' => $d->bank_name, 'account' => $d->account_number])
+            ->values()->all();
+
+        if ($this->depositSuggestions && !$this->depositBank) {
+            $this->depositBank = $this->depositSuggestions[0]['bank'];
+            $this->depositAccount = $this->depositSuggestions[0]['account'];
+        }
+
+        $this->dispatchBrowserEvent('open-deposit-modal');
+    }
+
+    public function saveDeposit()
+    {
+        $this->validate([
+            'depositBank' => ['required', 'string', 'max:100'],
+            'depositAccount' => ['required', 'string', 'max:100'],
+            'depositSlips' => ['required', 'array', 'min:1'],
+            'depositSlips.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+        ], [
+            'depositSlips.required' => 'Attach at least one bank slip.',
+            'depositSlips.*.mimes' => 'Slips must be JPG, PNG or PDF.',
+            'depositSlips.*.max' => 'Each slip must be 5 MB or smaller.',
+        ]);
+
+        // The amount is always today's balance not yet deposited (never typed in).
+        $this->loadData();
+        $amount = $this->summary['to_deposit_raw'];
+
+        if ($amount <= 0) {
+            $this->addError('depositAmount', 'There is no balance left to deposit today.');
+            return;
+        }
+
+        $deposit = BankDeposist::create([
+            'bank_name' => trim($this->depositBank),
+            'account_number' => trim($this->depositAccount),
+            'deposited_amount' => $amount,
+            'deposited_by' => Auth::id(),
+            'status' => 'Pending',
+            'deposited_date' => Carbon::now(),
+            'deposit_origin' => 'Mbao daily balance '.Carbon::today()->format('d/m/Y'),
+            'source' => BankDeposist::SOURCE_MBAO,
+            'store_id' => $this->storeId !== 'all' ? $this->storeId : null,
+            'balance_date' => Carbon::today()->toDateString(),
+            'created_at' => Carbon::now(),
+        ]);
+
+        foreach ($this->depositSlips as $slip) {
+            $deposit->files()->create(['file_path' => $slip->store('bank_deposits', 'public')]);
+        }
+
+        $this->depositSlips = [];
+        $this->loadData();
+        $this->dispatchBrowserEvent('deposit-saved', ['amount' => number_format($amount, 2)]);
+    }
+
+    public function showDeposits()
+    {
+        $this->useMainStore();
+
+        $this->depositList = $this->mbaoDeposits()
+            ->with(['files', 'user'])
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get()
+            ->map(fn ($d) => [
+                'date' => optional($d->deposited_date)->format('d/m/Y H:i'),
+                'balance_date' => optional($d->balance_date)->format('d/m/Y'),
+                'amount' => (float) $d->deposited_amount,
+                'bank' => $d->bank_name,
+                'account' => $d->account_number,
+                'by' => optional($d->user)->first_name,
+                'status' => $d->status,
+                'slips' => $d->files->map(fn (BankDepositFile $f) => [
+                    'url' => $f->file_url,
+                    'image' => $f->isImage(),
+                ])->all(),
+            ])->all();
+
+        $this->dispatchBrowserEvent('open-deposits-list');
     }
 
     /**

@@ -1,0 +1,8 @@
+# The web root is the project root on cPanel, so block direct downloads
+# of logs / compiled views / sessions.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Deny from all
+</IfModule>
