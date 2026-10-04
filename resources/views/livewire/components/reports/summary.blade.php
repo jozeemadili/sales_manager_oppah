@@ -10,6 +10,7 @@
             </div>
         </div>
         <div class="card-body p-0">
+            {{-- Hidden for now (requested 2026-10-04): period totals strip, Sales - (Inventory + Daily expenses) = Balance.
             <!-- Period totals: Sales - (Inventory + Daily expenses) = Balance -->
             <div class="row g-2 text-center px-3 pt-3">
                 <div class="col-6 col-md-3">
@@ -37,6 +38,7 @@
                     </div>
                 </div>
             </div>
+            --}}
             <figure class="highcharts-figure" wire:ignore>
                 <div id="container_sales"></div>
             </figure>
@@ -172,43 +174,6 @@
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card income-card card-danger text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-money-bag" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['expenses_to_date'] }}</h5>
-                    <p>Inventory Expenses (To Date)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card income-card card-warning text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-calendar" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['expenses_month'] }}</h5>
-                    <p>Inventory Expenses (This Month)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card income-card card-secondary text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-clock-time" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['expenses_today'] }}</h5>
-                    <p>Inventory Expenses (Today)</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     @if(count($expenseBreakdown))
     <div class="card">
