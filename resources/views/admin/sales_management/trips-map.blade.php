@@ -48,6 +48,17 @@ Trips Map
 
               <div class="mb-2 small" id="tripsLegend"></div>
 
+              @if($lastSeen->count())
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                  @foreach($lastSeen as $seen)
+                      <span class="badge bg-light text-dark border">
+                          <strong>{{ $seen['truck'] }}</strong> last seen {{ $seen['time'] }}
+                          @if($seen['speed'] !== null) &middot; {{ round($seen['speed']) }} km/h @endif
+                      </span>
+                  @endforeach
+              </div>
+              @endif
+
               @if($points->count())
                   <div id="tripsMap"></div>
               @else
@@ -95,9 +106,9 @@ Trips Map
           var color = colors[i % colors.length], line = [];
           byTruck[truck].forEach(function (p, j) {
               var last = j === byTruck[truck].length - 1;
-              L.circleMarker([p.lat, p.lng], { radius: last ? 9 : 6, color: color, fillColor: color, fillOpacity: last ? 0.9 : 0.5, weight: 2 })
+              L.circleMarker([p.lat, p.lng], { radius: last ? 9 : (p.tracking ? 3 : 6), color: color, fillColor: color, fillOpacity: last ? 0.9 : 0.5, weight: 2 })
                   .addTo(map)
-                  .bindPopup('<b>' + truck + '</b>' + (last ? ' (latest)' : '') + '<br>Trip: <a href="{{ url('v1/route/preview') }}/' + p.route_id + '">' + (p.trip || p.route_id) + '</a><br>' + p.event + '<br>' + p.time + '<br>' + (p.by || '') + ' &middot; &plusmn;' + p.accuracy + ' m');
+                  .bindPopup('<b>' + truck + '</b>' + (last ? ' (latest)' : '') + '<br>Trip: <a href="{{ url('v1/route/preview') }}/' + p.route_id + '">' + (p.trip || p.route_id) + '</a><br>' + p.event + '<br>' + p.time + '<br>' + (p.by || '') + ' &middot; &plusmn;' + p.accuracy + ' m' + (p.speed !== null ? ' &middot; ' + Math.round(p.speed) + ' km/h' : ''));
               line.push([p.lat, p.lng]);
               all.push([p.lat, p.lng]);
           });

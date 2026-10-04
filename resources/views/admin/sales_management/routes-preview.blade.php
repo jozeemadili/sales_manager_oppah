@@ -322,11 +322,16 @@
             </div>
         {{-- MAP TAB: where the driver was when each entry was saved --}}
             @php
-                $tripLocations = \App\Models\TripLocation::with('user')->where('route_id', $TrucksRoute->id)->orderBy('created_at')->get();
-                $tripPoints = $tripLocations->filter->hasPosition()->map(fn ($l) => ['lat' => $l->latitude, 'lng' => $l->longitude, 'accuracy' => $l->accuracy_m, 'event' => $l->eventLabel(), 'by' => optional($l->user)->first_name, 'time' => $l->created_at->format('d M Y H:i')])->values();
+                $tripLocations = \App\Models\TripLocation::with('user')->where('route_id', $TrucksRoute->id)->orderByRaw('COALESCE(recorded_at, created_at)')->get();
+                $tripPoints = $tripLocations->filter->hasPosition()->map(fn ($l) => ['lat' => $l->latitude, 'lng' => $l->longitude, 'accuracy' => $l->accuracy_m, 'event' => $l->eventLabel(), 'tracking' => $l->event === 'tracking', 'by' => optional($l->user)->first_name, 'time' => $l->takenAt()->format('d M Y H:i')])->values();
+                $tripActions = $tripLocations->where('event', '!=', 'tracking');
+                $tripTrackPoints = $tripLocations->where('event', 'tracking')->count();
             @endphp
             <div class="tab-pane fade" id="tripMap" role="tabpanel">
                 @if($tripPoints->count())
+                    @if($tripTrackPoints)
+                        <div class="small text-muted mb-1">&#128241; {{ $tripTrackPoints }} tracking points from the driver app (blue line).</div>
+                    @endif
                     <div id="tripMapCanvas" style="height: 420px; border-radius: 6px;"></div>
                 @else
                     <div class="alert alert-light border">No location recorded for this trip yet.</div>
@@ -335,9 +340,9 @@
                     <table class="table table-sm">
                         <thead><tr><th>Time</th><th>Action</th><th>By</th><th>Location</th></tr></thead>
                         <tbody>
-                            @forelse($tripLocations as $loc)
+                            @forelse($tripActions as $loc)
                             <tr>
-                                <td>{{ $loc->created_at->format('d M Y H:i') }}</td>
+                                <td>{{ $loc->takenAt()->format('d M Y H:i') }}</td>
                                 <td>{{ $loc->eventLabel() }}</td>
                                 <td>{{ optional($loc->user)->first_name }}</td>
                                 <td>
@@ -375,8 +380,14 @@
         if (map) { map.invalidateSize(); return; }
         map = L.map('tripMapCanvas');
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
-        var latlngs = points.map(function (p, i) {
-            L.marker([p.lat, p.lng]).addTo(map).bindPopup('<b>' + (i + 1) + '. ' + p.event + '</b><br>' + p.time + '<br>' + (p.by || '') + '<br>&plusmn;' + p.accuracy + ' m');
+        var n = 0;
+        var latlngs = points.map(function (p) {
+            if (p.tracking) {
+                L.circleMarker([p.lat, p.lng], { radius: 3, color: '#1565c0', fillOpacity: 0.8 }).addTo(map).bindPopup(p.time);
+            } else {
+                n++;
+                L.marker([p.lat, p.lng]).addTo(map).bindPopup('<b>' + n + '. ' + p.event + '</b><br>' + p.time + '<br>' + (p.by || '') + '<br>&plusmn;' + p.accuracy + ' m');
+            }
             return [p.lat, p.lng];
         });
         if (latlngs.length > 1) { L.polyline(latlngs, { color: '#1565c0', weight: 3, opacity: 0.7 }).addTo(map); }

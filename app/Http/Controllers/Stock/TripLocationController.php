@@ -34,9 +34,9 @@ class TripLocationController extends Controller
         $truckId = $request->input('truck_id');
 
         $locations = TripLocation::with(['route.our_truck', 'user'])
-            ->whereBetween('created_at', [$from, $to])
+            ->whereRaw('COALESCE(recorded_at, created_at) BETWEEN ? AND ?', [$from, $to])
             ->when($truckId, fn ($q) => $q->whereHas('route', fn ($r) => $r->where('truck_id', $truckId)))
-            ->orderBy('created_at')
+            ->orderByRaw('COALESCE(recorded_at, created_at)')
             ->get();
 
         $points = $locations->filter->hasPosition()->map(fn (TripLocation $l) => [
@@ -47,12 +47,18 @@ class TripLocationController extends Controller
             'trip' => optional($l->route)->trip_no,
             'route_id' => $l->route_id,
             'event' => $l->eventLabel(),
+            'tracking' => $l->event === 'tracking',
+            'speed' => $l->speed_kmh,
             'by' => optional($l->user)->first_name,
-            'time' => $l->created_at->format('d M Y H:i'),
+            'time' => $l->takenAt()->format('d M Y H:i'),
         ])->values();
+
+        // Last known position per truck ("last seen").
+        $lastSeen = $points->groupBy('truck')->map(fn ($p) => $p->last())->values();
 
         return view('admin.sales_management.trips-map', [
             'points' => $points,
+            'lastSeen' => $lastSeen,
             'noLocation' => $locations->reject->hasPosition()->values(),
             'trucks' => OurTruck::orderBy('plate_no')->get(['id', 'plate_no']),
             'from' => $from->toDateString(),

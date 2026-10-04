@@ -12,6 +12,7 @@ use App\Http\Controllers\API\Tests\OpenAIs\DalleControllers;
 
 use App\Http\Controllers\WhatsAppController;
 use App\Http\Controllers\WhatsAppGatewayController;
+use App\Http\Controllers\API\Driver\DriverAppController;
 
 Route::post('/send-whatsapp', [WhatsAppController::class, 'send']);
 Route::post('/call-back-whatsapp', [WhatsAppController::class, 'send']);
@@ -20,6 +21,23 @@ Route::post('v1/whatsapp/callback', [WhatsAppGatewayController::class, 'replyCus
 Route::get('v1/whatsapp/callback', [WhatsAppGatewayController::class, 'returnChallenge']);
 
 Route::get("/Test/Dalle/Test", [DalleControllers::class, 'test']);
+
+// Driver Android app (mobile/driver_app)
+Route::prefix('driver/v1')->group(function () {
+    Route::post('login', [DriverAppController::class, 'login'])->middleware('throttle:10,1');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('logout', [DriverAppController::class, 'logout']);
+        Route::get('me', [DriverAppController::class, 'me']);
+        Route::get('trips', [DriverAppController::class, 'trips']);
+        Route::post('trips', [DriverAppController::class, 'createTrip']);
+        Route::get('trips/{id}', [DriverAppController::class, 'trip']);
+        Route::post('trips/{id}/route-plans', [DriverAppController::class, 'addRoutePlan']);
+        Route::post('trips/{id}/expenses', [DriverAppController::class, 'addExpense']);
+        Route::post('trips/{id}/submit', [DriverAppController::class, 'submitTrip']);
+        Route::post('locations', [DriverAppController::class, 'locations']);
+    });
+});
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();

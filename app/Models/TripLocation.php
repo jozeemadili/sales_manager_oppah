@@ -21,6 +21,7 @@ class TripLocation extends Model
 		'route_plan' => 'Route plan / fuel',
 		'expense' => 'Trip expense',
 		'submitted' => 'Trip submitted',
+		'tracking' => 'Live tracking (app)',
 	];
 
 	const STATUSES = ['ok', 'denied', 'unavailable', 'timeout', 'unsupported'];
@@ -45,7 +46,18 @@ class TripLocation extends Model
 
 	protected $fillable = [
 		'route_id', 'event', 'ref_id', 'latitude', 'longitude', 'accuracy_m', 'status', 'recorded_by',
+		'recorded_at', 'speed_kmh', 'source',
 	];
+
+	protected $dates = [
+		'recorded_at',
+	];
+
+	// When the point was taken (app points can arrive later than they were recorded).
+	public function takenAt()
+	{
+		return $this->recorded_at ?: $this->created_at;
+	}
 
 	public function route()
 	{
@@ -98,6 +110,8 @@ class TripLocation extends Model
 			'accuracy_m' => $valid && is_numeric($request->input('geo_accuracy')) ? (int) $request->input('geo_accuracy') : null,
 			'status' => $valid ? 'ok' : ($status === 'ok' ? 'unavailable' : $status),
 			'recorded_by' => Auth::id(),
+			'recorded_at' => now(),
+			'source' => $request->input('geo_source') === 'app' ? 'app' : 'web',
 		]);
 	}
 }
