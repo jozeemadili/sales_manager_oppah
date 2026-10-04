@@ -296,7 +296,43 @@
                         </div>
                     @endif
                     <div class="table-responsive">
-                        @if($detailType === 'paid_today')
+                        @if($detailType === 'unpaid_all')
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                            <thead><tr><th>Customer</th><th>Phone</th><th class="text-end">Invoices</th><th class="text-end">Oldest (days)</th><th class="text-end">Total</th><th class="text-end">Paid</th><th class="text-end">Remaining</th><th></th></tr></thead>
+                            <tbody>
+                                @forelse($detailCustomers as $cust)
+                                <tr>
+                                    <td><a href="{{ route('customer-statement', $cust['id']) }}" class="fw-semibold">{{ strtoupper($cust['name']) }}</a></td>
+                                    <td><small>{{ $cust['phone'] ? '+255'.$cust['phone'] : '' }}</small></td>
+                                    <td class="text-end">{{ $cust['invoices'] }}</td>
+                                    <td class="text-end">{{ $cust['oldest_days'] }}</td>
+                                    <td class="text-end">{{ number_format($cust['total'], 0) }}</td>
+                                    <td class="text-end">{{ number_format($cust['paid'], 0) }}</td>
+                                    <td class="text-end fw-semibold text-danger">{{ number_format($cust['remained'], 0) }}</td>
+                                    <td class="text-end text-nowrap">
+                                        <a href="{{ route('customer-statement', $cust['id']) }}" class="btn btn-outline-primary btn-xs">Statement</a>
+                                        <a href="{{ route('customer-statement-pdf', $cust['id']) }}" class="btn btn-outline-danger btn-xs">PDF</a>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr><td colspan="8" class="text-center text-muted py-4">No unpaid invoices.</td></tr>
+                                @endforelse
+                            </tbody>
+                            @if(count($detailCustomers))
+                            <tfoot>
+                                <tr class="fw-bold">
+                                    <td colspan="2">{{ count($detailCustomers) }} customers</td>
+                                    <td class="text-end">{{ collect($detailCustomers)->sum('invoices') }}</td>
+                                    <td></td>
+                                    <td class="text-end">{{ number_format(collect($detailCustomers)->sum('total'), 0) }}</td>
+                                    <td class="text-end">{{ number_format(collect($detailCustomers)->sum('paid'), 0) }}</td>
+                                    <td class="text-end text-danger">{{ number_format(collect($detailCustomers)->sum('remained'), 0) }}</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                            @endif
+                        </table>
+                        @elseif($detailType === 'paid_today')
                         <table class="table table-sm table-hover mb-0 align-middle">
                             <thead><tr><th>Time</th><th>Receipt</th><th>Invoice</th><th>Customer</th><th>Channel</th><th>Received By</th><th class="text-end">Amount (TZS)</th></tr></thead>
                             <tbody>

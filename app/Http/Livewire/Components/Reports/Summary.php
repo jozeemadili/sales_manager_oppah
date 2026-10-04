@@ -35,6 +35,7 @@ class Summary extends Component
     public $detailCount = 0;
     public $detailTotal = 0;
     public $detailByStatus = [];
+    public $detailCustomers = [];
 
     const DETAIL_LIMIT = 500;
 
@@ -335,6 +336,7 @@ class Summary extends Component
             $this->detailCount = (clone $query)->count() + $quick->count();
             $this->detailTotal = (float) (clone $query)->sum('amount_submitted') + (float) $quick->sum('total');
             $this->detailByStatus = [];
+            $this->detailCustomers = [];
             $this->detailRows = $query->orderByDesc('date_payed')->limit(self::DETAIL_LIMIT)->get()
                 ->map(fn ($p) => [
                     'receipt' => $p->receipt_number,
@@ -379,6 +381,30 @@ class Summary extends Component
 
             $this->detailCount = (clone $query)->count();
             $this->detailTotal = (float) (clone $query)->sum($sumColumn);
+
+            // Unpaid (all time) is shown per customer, each linking to a statement.
+            $this->detailCustomers = $type !== 'unpaid_all' ? [] : (clone $query)->toBase()
+                ->join('customers as c', 'c.id', '=', 'invoices.customer_id')
+                ->groupBy('invoices.customer_id', 'c.name', 'c.phone')
+                ->orderByDesc(DB::raw('SUM(invoices.amount_remained)'))
+                ->get([
+                    'invoices.customer_id', 'c.name', 'c.phone',
+                    DB::raw('COUNT(*) as invoices'),
+                    DB::raw('SUM(invoices.total_invoice_amount) as total'),
+                    DB::raw('SUM(invoices.amount_paid) as paid'),
+                    DB::raw('SUM(invoices.amount_remained) as remained'),
+                    DB::raw('MIN(invoices.invoice_date) as oldest'),
+                ])
+                ->map(fn ($r) => [
+                    'id' => $r->customer_id,
+                    'name' => $r->name,
+                    'phone' => $r->phone,
+                    'invoices' => (int) $r->invoices,
+                    'total' => (float) $r->total,
+                    'paid' => (float) $r->paid,
+                    'remained' => (float) $r->remained,
+                    'oldest_days' => $r->oldest ? Carbon::parse($r->oldest)->startOfDay()->diffInDays(Carbon::today()) : null,
+                ])->all();
             $this->detailByStatus = (clone $query)->toBase()
                 ->groupBy('status')
                 ->get(['status', DB::raw('COUNT(*) as n'), DB::raw("SUM($sumColumn) as amount")])
