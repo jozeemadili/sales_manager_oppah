@@ -20,6 +20,7 @@ class Summary extends Component
     public $storeId = 'all';
     public $stores = [];
     public $expenseBreakdown = [];
+    public $expensesChart = [];
 
     public function mount()
     {
@@ -160,8 +161,21 @@ class Summary extends Component
 
         $this->sales = $salesData;
 
+        // --- EXPENSES CHART DATA (same scope as the expense cards) ---
+        $expenseRows = (clone $expenseQuery)
+            ->whereYear('r.reg_at', date('Y'))
+            ->groupBy(DB::raw('MONTH(r.reg_at)'))
+            ->get([DB::raw('MONTH(r.reg_at) as month'), DB::raw('SUM(r.amount_used) as amount')]);
+
+        $expenseData = [];
+        for ($month = 1; $month <= 12; $month++) {
+            $expenseData[] = (float) optional($expenseRows->firstWhere('month', $month))->amount;
+        }
+
+        $this->expensesChart = $expenseData;
+
         // Emit event to update chart
-        $this->emit('salesUpdated', $this->sales);
+        $this->emit('salesUpdated', $this->sales, $this->expensesChart);
     }
 
     public function render()

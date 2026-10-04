@@ -226,6 +226,9 @@
 
 <script>
 document.addEventListener('livewire:load', function () {
+    let salesData = @json($sales);
+    let expensesData = @json($expensesChart);
+
     function renderChart() {
         Highcharts.chart('container_sales', {
             chart: { type: 'column', options3d: { enabled: true, alpha: 10, beta: 25, depth: 70 } },
@@ -233,12 +236,22 @@ document.addEventListener('livewire:load', function () {
             plotOptions: { column: { depth: 25 } },
             xAxis: { categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], labels: { skew3d: true, style: { fontSize: '16px' } } },
             yAxis: { title: { text: 'TZS', margin: 20 } },
-            tooltip: { valueSuffix: ' TZS' },
-            series: [{ name: 'Total Sales', data: @json($sales) }]
+            tooltip: { valueSuffix: ' TZS', shared: true },
+            series: [
+                { name: 'Total Sales', data: salesData },
+                { name: 'Expenses', data: expensesData, color: '#e74c3c' }
+            ]
         });
     }
 
     renderChart();
+
+    // Fresh data arrives with each update (e.g. changing the store).
+    Livewire.on('salesUpdated', (sales, expenses) => {
+        salesData = sales;
+        expensesData = expenses;
+        setTimeout(renderChart, 0); // after Livewire has finished patching the DOM
+    });
 
     Livewire.hook('message.processed', () => { renderChart(); });
 });
