@@ -57,4 +57,12 @@ class Store extends Model
 	{
 		return $this->belongsTo(Company::class);
 	}
+
+	// The Mbao dashboard and daily expenses work on this store only (matched by name).
+	const MAIN_STORE_NAME = 'MZINGA';
+
+	public static function mainStore()
+	{
+		return static::where('name', 'like', '%'.self::MAIN_STORE_NAME.'%')->first();
+	}
 }

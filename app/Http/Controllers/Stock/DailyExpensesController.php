@@ -31,7 +31,8 @@ class DailyExpensesController extends Controller
 
         $from = $request->filled('from') ? Carbon::parse($request->from)->startOfDay() : Carbon::now()->startOfMonth();
         $to = $request->filled('to') ? Carbon::parse($request->to)->endOfDay() : Carbon::now()->endOfDay();
-        $storeId = $user->hasFullAccess() ? $request->input('store_id', 'all') : $user->office_location;
+        $store = $this->mainStore();
+        $storeId = $store->id;
 
         $query = DailyExpense::active()
             ->with(['type', 'store', 'user'])
@@ -55,7 +56,7 @@ class DailyExpensesController extends Controller
             'days' => $days,
             'total' => $total,
             'types' => DailyExpenseType::where('company_id', $user->company_id)->where('status', 'Active')->orderBy('name')->get(),
-            'stores' => Store::where('company_id', $user->company_id)->where('status', 'Active')->orderBy('name')->get(),
+            'store' => $store,
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'storeId' => $storeId,
@@ -115,19 +116,24 @@ class DailyExpensesController extends Controller
             'expense_type_id' => ['required', 'integer', 'exists:daily_expense_types,id'],
             'amount' => ['required', 'numeric', 'min:1'],
             'expense_date' => ['required', 'date', 'before_or_equal:today', 'after_or_equal:'.$this->minDate()->toDateString()],
-            'store_id' => ['nullable', 'integer'],
             'description' => ['nullable', 'string', 'max:500'],
         ], [
             'expense_date.after_or_equal' => 'You can only record expenses for the last '.DailyExpense::BACKDATE_DAYS.' days.',
             'expense_date.before_or_equal' => 'The expense date cannot be in the future.',
         ]);
 
-        // Mbao users always record for their own store.
-        $data['store_id'] = $user->hasFullAccess() && !empty($data['store_id'])
-            ? (int) $data['store_id']
-            : (int) $user->office_location;
+        // Daily expenses are always recorded against the main (Mzinga) store.
+        $data['store_id'] = $this->mainStore()->id;
 
         return $data;
+    }
+
+    private function mainStore()
+    {
+        $store = Store::mainStore();
+        abort_unless($store, 500, 'Main store ('.Store::MAIN_STORE_NAME.') not found.');
+
+        return $store;
     }
 
     private function minDate()

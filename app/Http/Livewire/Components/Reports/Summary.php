@@ -18,7 +18,6 @@ class Summary extends Component
     public $summary = [];
     public $sales = [];
     public $storeId = 'all';
-    public $stores = [];
     public $expenseBreakdown = [];
     public $expensesChart = [];
     public $dailyBreakdown = [];
@@ -27,22 +26,24 @@ class Summary extends Component
     public $chartCategories = [];
     public $chartStoreName = '';
 
-    // Payment Trends always shows this store (matched by name).
-    const CHART_STORE_NAME = 'MZINGA';
 
     public function mount()
     {
-        $this->stores = Store::all(); // Fetch all stores for dropdown
         $this->loadData();
     }
 
-    public function updatedStoreId()
+    // The Mbao dashboard is fixed to the main (Mzinga) store; re-resolved on
+    // every load so the public property can't be pointed elsewhere.
+    private function useMainStore()
     {
-        $this->loadData(); // Reload data when store changes
+        $store = Store::mainStore();
+        $this->storeId = $store ? $store->id : 'all';
+        $this->chartStoreName = $store ? $store->name : 'All Stores';
     }
 
     private function loadData()
     {
+        $this->useMainStore();
         $companyId = Auth::user()->company_id;
 
         // --- PRODUCTS SUMMARY ---
@@ -188,10 +189,9 @@ class Summary extends Component
      */
     private function loadChart()
     {
+        $this->useMainStore();
         $companyId = Auth::user()->company_id;
-        $store = Store::where('name', 'like', '%'.self::CHART_STORE_NAME.'%')->first();
-        $storeId = optional($store)->id;
-        $this->chartStoreName = $store ? $store->name : 'All Stores';
+        $storeId = $this->storeId !== 'all' ? $this->storeId : null;
 
         if ($this->chartPeriod === 'year') {
             $start = Carbon::now()->startOfYear();

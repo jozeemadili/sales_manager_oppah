@@ -1,14 +1,10 @@
 <div>
-    <!-- Store Selection Dropdown -->
-    <div class="mb-4 text-center">
-        <label for="storeSelect"><strong>Select Store:</strong></label>
-        <select id="storeSelect" wire:model="storeId" class="form-control w-auto d-inline-block">
-            <option value="all">All Stores</option>
-            @foreach($stores as $store)
-                <option value="{{ $store->id }}">{{ $store->name }}</option>
-            @endforeach
-        </select>
+    <!-- Fixed store notice -->
+    <div class="alert alert-light border text-center mb-4">
+        <i class="icofont icofont-store"></i>
+        You are viewing stock from <strong>{{ strtoupper($chartStoreName) }}</strong> store
     </div>
+
     <!-- Stock & Expenses -->
     <div class="row">
         <div class="col-lg-6">
@@ -295,8 +291,8 @@
 
 @push('css')
 <style>
-#container_sales { height: 39vh; }
-.highcharts-figure, .highcharts-data-table table { min-width: 510px; max-width: 900px; margin: 1em auto; }
+#container_sales { height: 460px; }
+.highcharts-figure { width: 100%; margin: 0; padding: 0 10px 10px; }
 </style>
 @endpush
 
@@ -308,12 +304,19 @@
 
 <script>
 document.addEventListener('livewire:load', function () {
+    // Month view has up to 31 days x 3 bars: smaller, angled labels so they fit.
+    function labelOptions(count) {
+        return count > 12
+            ? { rotation: -45, style: { fontSize: '11px' } }
+            : { rotation: 0, style: { fontSize: '13px' } };
+    }
+
     // The chart container is wire:ignore'd: build the chart once and update it in place.
     const chart = Highcharts.chart('container_sales', {
-        chart: { type: 'column', options3d: { enabled: true, alpha: 10, beta: 25, depth: 70 } },
+        chart: { type: 'column' },
         title: { text: '', align: 'left' },
-        plotOptions: { column: { depth: 25 } },
-        xAxis: { categories: @json($chartCategories), labels: { skew3d: true, style: { fontSize: '13px' } } },
+        plotOptions: { column: { groupPadding: 0.1, pointPadding: 0.02, borderWidth: 0 } },
+        xAxis: { categories: @json($chartCategories), labels: labelOptions(@json($chartCategories).length) },
         yAxis: { title: { text: 'TZS', margin: 20 } },
         tooltip: { valueSuffix: ' TZS', shared: true },
         series: [
@@ -324,7 +327,7 @@ document.addEventListener('livewire:load', function () {
     });
 
     Livewire.on('salesUpdated', (data) => {
-        chart.xAxis[0].setCategories(data.categories, false);
+        chart.xAxis[0].update({ categories: data.categories, labels: labelOptions(data.categories.length) }, false);
         chart.series[0].setData(data.sales, false);
         chart.series[1].setData(data.inventory, false);
         chart.series[2].setData(data.daily, false);

@@ -54,17 +54,10 @@ Daily Expenses
                             <label class="col-form-label">To</label>
                             <input class="form-control" type="date" name="to" value="{{ $to }}">
                         </div>
-                        @if(Auth::user()->hasFullAccess())
                         <div class="col-md-3">
                             <label class="col-form-label">Store</label>
-                            <select class="form-select" name="store_id">
-                                <option value="all">All Stores</option>
-                                @foreach($stores as $store)
-                                    <option value="{{ $store->id }}" @selected((string) $storeId === (string) $store->id)>{{ strtoupper($store->name) }}</option>
-                                @endforeach
-                            </select>
+                            <input class="form-control" type="text" value="{{ strtoupper($store->name) }}" readonly>
                         </div>
-                        @endif
                         <div class="col-md-3">
                             <button class="btn btn-outline-primary w-100" type="submit">Filter <i class="icofont icofont-filter"></i></button>
                         </div>

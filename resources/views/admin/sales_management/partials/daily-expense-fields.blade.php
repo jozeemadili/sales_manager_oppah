@@ -28,19 +28,13 @@
                    value="{{ $expense ? $expense->amount : '' }}">
         </div>
     </div>
-    @if(Auth::user()->hasFullAccess())
     <div class="col-lg-4">
         <div class="form-group">
             <label class="col-form-label">Store</label>
-            <select class="form-select" name="store_id" required>
-                @foreach($stores as $store)
-                    <option value="{{ $store->id }}" @selected($expense ? $expense->store_id === $store->id : (string) Auth::user()->office_location === (string) $store->id)>{{ strtoupper($store->name) }}</option>
-                @endforeach
-            </select>
+            <input class="form-control" type="text" value="{{ strtoupper($store->name) }}" readonly>
         </div>
     </div>
-    @endif
-    <div class="{{ Auth::user()->hasFullAccess() ? 'col-lg-8' : 'col-lg-12' }}">
+    <div class="col-lg-8">
         <div class="form-group">
             <label class="col-form-label">Description</label>
             <input class="form-control" type="text" name="description" maxlength="500"
