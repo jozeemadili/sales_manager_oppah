@@ -1,4 +1,27 @@
 <div>
+    <!-- End Day -->
+    @if($dayLock)
+    <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+            <i class="icofont icofont-lock"></i>
+            <strong>Day closed</strong> at {{ $dayLock['closed_at'] }} by {{ $dayLock['by'] }}.
+            Mbao is <strong>view only</strong> until {{ $dayLock['locked_until'] }} (saa 12 asubuhi).
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('day-closure-pdf', $dayLock['id']) }}" target="_blank" class="btn btn-sm btn-primary"><i class="icofont icofont-file-pdf"></i> End Day PDF</a>
+            @if(Auth::user()->hasFullAccess())
+            <button type="button" class="btn btn-sm btn-outline-danger" wire:click="reopenDay" onclick="return confirm('Re-open the day? Mbao users will be able to sell and edit again.')">Re-open Day</button>
+            @endif
+        </div>
+    </div>
+    @else
+    <div class="d-flex justify-content-end mb-3">
+        <button type="button" class="btn btn-danger" wire:click="previewEndDay">
+            <i class="icofont icofont-power"></i> End Day
+        </button>
+    </div>
+    @endif
+
     <!-- Sales vs Expenses Chart -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
@@ -154,7 +177,7 @@
                         </small>
                     </div>
                     <div class="mt-2 d-flex justify-content-center gap-2 flex-wrap">
-                        <button type="button" class="btn btn-primary btn-sm" wire:click="openDeposit" @disabled($summary['to_deposit_raw'] <= 0)>
+                        <button type="button" class="btn btn-primary btn-sm" wire:click="openDeposit" @disabled($summary['to_deposit_raw'] <= 0 || ($dayLock && !Auth::user()->hasFullAccess()))>
                             <i class="icofont icofont-bank-alt"></i> Record Bank Deposit
                         </button>
                         <button type="button" class="btn btn-outline-primary btn-sm" wire:click="showDeposits">
@@ -506,6 +529,71 @@
             </div>
         </div>
     </div>
+
+    <!-- End Day preview / confirm -->
+    <div class="modal fade" id="endDayModal" tabindex="-1" aria-hidden="true" wire:ignore.self>
+        <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="icofont icofont-power"></i> End Day &mdash; {{ strtoupper($chartStoreName) }} &mdash; {{ now()->format('d M Y') }}</h5>
+                    <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if($endDayPreview)
+                    @php $p = $endDayPreview; $f = fn ($v) => number_format((float) $v, 2); @endphp
+                    <table class="table table-sm table-bordered">
+                        <tr><th>Stock Value (Selling Price)</th><td class="text-end">{{ $f($p['stock_selling']) }}</td><th>Stock Value (Cost Price)</th><td class="text-end">{{ $f($p['stock_cost']) }}</td></tr>
+                        <tr><th>Total Generated (Today)</th><td class="text-end">{{ $f($p['generated_today']) }} <small class="text-muted">({{ $p['lists']['generated_today']['count'] }})</small></td><th>Total Paid (Today)</th><td class="text-end">{{ $f($p['paid_today']) }} <small class="text-muted">({{ $p['lists']['paid_today']['count'] }})</small></td></tr>
+                        <tr><th>Remaining Unpaid (Today)</th><td class="text-end">{{ $f($p['unpaid_today']) }} <small class="text-muted">({{ $p['lists']['unpaid_today']['count'] }})</small></td><th>Total Unpaid (All Time)</th><td class="text-end">{{ $f($p['unpaid_all']) }} <small class="text-muted">({{ count($p['lists']['unpaid_all']['customers']) }} customers)</small></td></tr>
+                        <tr><th>Inventory Expenses (Today)</th><td class="text-end">{{ $f($p['inventory_expenses_today']) }}</td><th>Daily Expenses (Today)</th><td class="text-end">{{ $f($p['daily_expenses_today']) }} <small class="text-muted">({{ count($p['daily_entries']) }})</small></td></tr>
+                        <tr class="table-success fw-bold"><th>Balance (Today)</th><td class="text-end">{{ $f($p['balance_today']) }}</td><th>Deposited to bank</th><td class="text-end">{{ $f($p['deposited_today']) }} <small class="text-muted">({{ count($p['deposits']) }} deposit(s))</small></td></tr>
+                    </table>
+
+                    @if($p['left_to_deposit'] > 0)
+                    <div class="alert alert-danger py-2">
+                        <strong>{{ $f($p['left_to_deposit']) }} TZS</strong> of today's balance has not been deposited to the bank. You can still end the day; the report will show it as not deposited.
+                    </div>
+                    @endif
+
+                    @if(count($p['daily_entries']))
+                    <h6 class="mt-3">Daily Expenses (Today)</h6>
+                    <table class="table table-sm">
+                        <thead><tr><th>Time</th><th>Expense</th><th>Description</th><th>By</th><th class="text-end">Amount</th></tr></thead>
+                        <tbody>
+                            @foreach($p['daily_entries'] as $e)
+                            <tr><td>{{ $e['time'] }}</td><td>{{ strtoupper($e['type']) }}</td><td><small>{{ $e['description'] }}</small></td><td>{{ $e['by'] }}</td><td class="text-end">{{ $f($e['amount']) }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    @endif
+
+                    @if(count($p['deposits']))
+                    <h6 class="mt-3">Bank Deposits (Today)</h6>
+                    <table class="table table-sm">
+                        <thead><tr><th>Time</th><th>Bank</th><th>Account</th><th>By</th><th class="text-end">Amount</th><th>Slips</th></tr></thead>
+                        <tbody>
+                            @foreach($p['deposits'] as $d)
+                            <tr><td>{{ $d['time'] }}</td><td>{{ strtoupper($d['bank']) }}</td><td>{{ $d['account'] }}</td><td>{{ $d['by'] }}</td><td class="text-end">{{ $f($d['amount']) }}</td><td>{{ count($d['slips']) }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    @endif
+
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <strong>After you confirm:</strong> the End Day PDF opens (with the full invoice lists), and Mbao users become <strong>view only</strong>
+                        &mdash; no selling, stock, invoices, expenses or deposits &mdash; until <strong>06:00 (saa 12 asubuhi)</strong>.
+                    </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-danger" type="button" wire:click="confirmEndDay" wire:loading.attr="disabled" wire:target="confirmEndDay">
+                        <i class="icofont icofont-check"></i> Confirm End Day
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('css')
@@ -560,6 +648,13 @@ document.addEventListener('livewire:load', function () {
     }
 
     window.addEventListener('open-deposit-modal', () => showModal('depositModal'));
+    window.addEventListener('open-end-day-modal', () => showModal('endDayModal'));
+    window.addEventListener('end-day-message', (event) => alert(event.detail.text));
+    window.addEventListener('end-day-closed', (event) => {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('endDayModal'));
+        if (modal) { modal.hide(); }
+        window.open(event.detail.pdf, '_blank');
+    });
     window.addEventListener('open-deposits-list', () => showModal('depositsListModal'));
     window.addEventListener('deposit-saved', (event) => {
         const el = document.getElementById('depositModal');

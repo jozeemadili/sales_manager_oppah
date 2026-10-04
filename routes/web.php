@@ -19,6 +19,7 @@ use App\Http\Controllers\Stock\StoresController;
 use App\Http\Controllers\Stock\DailyExpensesController;
 use App\Http\Controllers\Stock\CustomerStatementController;
 use App\Http\Controllers\Stock\BankDepositSlipController;
+use App\Http\Controllers\Stock\DayClosureController;
 use App\Http\Controllers\Tuli\TuliStoresController;
 use App\Http\Controllers\Tuli\inventoryManagentController;
 use App\Http\Controllers\Tuli\CategoriesController as TuliCategoriesController;
@@ -167,6 +168,7 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
     Route::get('bank/deposit', [LogisticsController::class, 'getBankDeposit'])->name('bank-deposit');
     Route::post('/bank-deposits/store', [LogisticsController::class, 'storeBankDeposit'])->name('bank-deposits.store');
     Route::get('bank-deposits/slips/{id}', [BankDepositSlipController::class, 'show'])->name('bank-deposit-slip');
+    Route::get('day-closures/{id}/pdf', [DayClosureController::class, 'pdf'])->name('day-closure-pdf');
 
     
     

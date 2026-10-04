@@ -42,6 +42,19 @@
         <!-- Page Sidebar Ends-->
         <div class="page-body">
           <!-- Container-fluid starts-->
+          @auth
+            @php $mbaoDayLock = \App\Models\DayClosure::lockFor(Auth::user()); @endphp
+            @if($mbaoDayLock)
+              <div class="container-fluid pt-3">
+                <div class="alert alert-warning mb-0">
+                  <i class="icofont icofont-lock"></i>
+                  <strong>Mbao day closed</strong> at {{ $mbaoDayLock->closed_at->format('H:i') }}
+                  &mdash; you can only <strong>view</strong> until {{ $mbaoDayLock->locked_until->format('d M Y H:i') }} (saa 12 asubuhi).
+                  Siku imefungwa &mdash; unaweza kuangalia tu.
+                </div>
+              </div>
+            @endif
+          @endauth
           @yield('content')
           <!-- Container-fluid Ends-->
         </div>

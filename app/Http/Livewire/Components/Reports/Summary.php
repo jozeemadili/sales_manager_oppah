@@ -13,6 +13,8 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\BankDeposist;
 use App\Models\BankDepositFile;
+use App\Models\DayClosure;
+use App\Models\DailyExpense;
 use App\Http\Livewire\SalesManagement\QuickSale;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -52,6 +54,10 @@ class Summary extends Component
     public $depositSuggestions = [];
     public $depositList = [];
 
+    // End Day
+    public $endDayPreview = [];
+    public $dayLock = null;
+
 
     public function mount()
     {
@@ -70,6 +76,7 @@ class Summary extends Component
     private function loadData()
     {
         $this->useMainStore();
+        $this->loadDayLock();
         $companyId = Auth::user()->company_id;
 
         // --- PRODUCTS SUMMARY ---
@@ -302,6 +309,146 @@ class Summary extends Component
         ]);
     }
 
+    private function loadDayLock()
+    {
+        $lock = DayClosure::activeLock($this->storeId !== 'all' ? $this->storeId : null);
+
+        $this->dayLock = $lock ? [
+            'id' => $lock->id,
+            'closed_at' => $lock->closed_at->format('d M Y H:i'),
+            'locked_until' => $lock->locked_until->format('d M Y H:i'),
+            'by' => optional($lock->closer)->first_name,
+        ] : null;
+    }
+
+    /**
+     * Everything shown on the End Day preview and PDF, as plain arrays so it
+     * can be stored with the closing and re-printed later unchanged.
+     */
+    private function endDaySnapshot()
+    {
+        $this->loadData();
+        $today = Carbon::today();
+
+        $lists = [];
+        foreach (['generated_today', 'paid_today', 'unpaid_today', 'unpaid_all'] as $type) {
+            $this->showDetail($type, false);
+            $lists[$type] = [
+                'count' => $this->detailCount,
+                'total' => $this->detailTotal,
+                'rows' => $this->detailRows,
+                'customers' => $this->detailCustomers,
+            ];
+        }
+        $this->detailType = null;
+
+        $dailyEntries = DailyExpense::active()
+            ->with(['type', 'user'])
+            ->where('store_id', $this->storeId)
+            ->whereDate('expense_date', $today)
+            ->orderBy('created_at')
+            ->get()
+            ->map(fn ($e) => [
+                'type' => optional($e->type)->name,
+                'description' => $e->description,
+                'amount' => (float) $e->amount,
+                'by' => optional($e->user)->first_name,
+                'time' => Carbon::parse($e->created_at)->format('H:i'),
+            ])->all();
+
+        $deposits = $this->mbaoDeposits()
+            ->with(['files', 'user'])
+            ->whereDate('balance_date', $today)
+            ->orderBy('id')
+            ->get()
+            ->map(fn ($d) => [
+                'time' => optional($d->deposited_date)->format('H:i'),
+                'bank' => $d->bank_name,
+                'account' => $d->account_number,
+                'amount' => (float) $d->deposited_amount,
+                'by' => optional($d->user)->first_name,
+                'slips' => $d->files->map(fn ($f) => ['id' => $f->id, 'path' => $f->file_path, 'image' => $f->isImage()])->all(),
+            ])->all();
+
+        $num = fn ($v) => (float) str_replace(',', '', $v);
+
+        return [
+            'store' => $this->chartStoreName,
+            'business_date' => $today->toDateString(),
+            'generated_at' => Carbon::now()->format('d M Y H:i'),
+            'stock_selling' => $num($this->summary['sumProduct']),
+            'stock_cost' => $num($this->summary['sumProductCost']),
+            'generated_today' => $num($this->summary['generated_amount']),
+            'paid_today' => $num($this->summary['paid_amount']),
+            'unpaid_today' => $num($this->summary['unpaid_amount']),
+            'unpaid_all' => $num($this->summary['unpaid_overall']),
+            'inventory_expenses_today' => $num($this->summary['expenses_today']),
+            'daily_expenses_today' => $num($this->summary['daily_today']),
+            'balance_today' => (float) $this->summary['balance_today_raw'],
+            'deposited_today' => $num($this->summary['deposited_today']),
+            'left_to_deposit' => (float) $this->summary['to_deposit_raw'],
+            'lists' => $lists,
+            'daily_by_type' => $this->dailyBreakdown,
+            'daily_entries' => $dailyEntries,
+            'deposits' => $deposits,
+        ];
+    }
+
+    public function previewEndDay()
+    {
+        $this->loadDayLock();
+
+        if ($this->dayLock) {
+            $this->dispatchBrowserEvent('end-day-message', ['text' => 'This day is already closed.']);
+            return;
+        }
+
+        $this->endDayPreview = $this->endDaySnapshot();
+        $this->dispatchBrowserEvent('open-end-day-modal');
+    }
+
+    public function confirmEndDay()
+    {
+        $this->loadDayLock();
+
+        if ($this->dayLock || $this->storeId === 'all') {
+            $this->dispatchBrowserEvent('end-day-message', ['text' => 'This day is already closed.']);
+            return;
+        }
+
+        // Re-read the figures at the moment of closing.
+        $snapshot = $this->endDaySnapshot();
+        $snapshot['closed_by'] = Auth::user()->first_name;
+
+        $closure = DayClosure::create([
+            'store_id' => $this->storeId,
+            'business_date' => $snapshot['business_date'],
+            'closed_by' => Auth::id(),
+            'closed_at' => Carbon::now(),
+            'locked_until' => DayClosure::lockUntil(Carbon::now()),
+            'status' => 'Closed',
+            'snapshot' => $snapshot,
+        ]);
+
+        $this->endDayPreview = [];
+        $this->loadData();
+        $this->dispatchBrowserEvent('end-day-closed', ['pdf' => route('day-closure-pdf', $closure->id)]);
+    }
+
+    // Admins only: undo an End Day pressed by mistake.
+    public function reopenDay()
+    {
+        abort_unless(Auth::user()->hasFullAccess(), 403);
+
+        $lock = DayClosure::activeLock($this->storeId !== 'all' ? $this->storeId : null);
+
+        if ($lock) {
+            $lock->update(['status' => 'Reopened', 'reopened_by' => Auth::id(), 'reopened_at' => Carbon::now()]);
+        }
+
+        $this->loadData();
+    }
+
     private function mbaoDeposits()
     {
         return BankDeposist::where('source', BankDeposist::SOURCE_MBAO)
@@ -448,7 +595,7 @@ class Summary extends Component
      * List the invoices / payments behind one of the invoice cards.
      * Uses the same scope as the cards: Mzinga store, user's company.
      */
-    public function showDetail($type)
+    public function showDetail($type, $open = true)
     {
         $this->useMainStore();
         $companyId = Auth::user()->company_id;
@@ -574,7 +721,10 @@ class Summary extends Component
         }
 
         $this->detailType = $type;
-        $this->dispatchBrowserEvent('open-summary-detail');
+
+        if ($open) {
+            $this->dispatchBrowserEvent('open-summary-detail');
+        }
     }
 
     public function render()
