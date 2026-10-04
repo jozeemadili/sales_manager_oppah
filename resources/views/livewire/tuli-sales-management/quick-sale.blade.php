@@ -478,7 +478,7 @@
                                     * $product->quantity
                                 ,2)}}
                             </td>
-                            <td>{{$product->sold_by}}</td>
+                            <td>{{ optional($product->user)->first_name ?? $product->sold_by }}</td>
                         </tr>
 
                         @endforeach

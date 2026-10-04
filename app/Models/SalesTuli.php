@@ -67,6 +67,11 @@ class SalesTuli extends Model
 		'discount_amount',
 	];
 
+	public function user()
+	{
+		return $this->belongsTo(User::class, 'sold_by');
+	}
+
 	public function products_tuli()
 	{
 		return $this->belongsTo(ProductsTuli::class, 'product_id');

@@ -136,7 +136,7 @@ $sale->selling_price - $sale->products_tuli->purchasing_price;
     
     
         }
-        $this->todayProducts = SalesTuli::with('products_tuli')
+        $this->todayProducts = SalesTuli::with(['products_tuli', 'user'])
     ->whereDate('date_sold',$today)
     // ->whereIn('status',[
     //     'sold',

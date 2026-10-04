@@ -104,7 +104,7 @@ class QuickSale extends Component
     {
         $today = date('Y-m-d');
 
-        $sales = Sale::with('product')
+        $sales = Sale::with(['product', 'user'])
             ->where('customer_id', self::WALK_IN_CUSTOMER)
             ->whereDate('date_sold', $today)
             ->whereIn('status', self::SOLD_STATUSES)
