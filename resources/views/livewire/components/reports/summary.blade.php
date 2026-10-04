@@ -133,6 +133,23 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-lg-12 mt-3">
+            <div class="card income-card {{ $summary['balance_today_raw'] < 0 ? 'card-danger' : 'card-success' }} text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-chart-line" style="font-size: 40px;"></i>
+                    </div>
+                    <h5 class="{{ $summary['balance_today_raw'] < 0 ? 'text-danger' : '' }}">{{ $summary['balance_today'] }}</h5>
+                    <p>Balance (Today)</p>
+                    <small class="text-muted">
+                        Paid today {{ $summary['paid_amount'] }}
+                        &minus; Inventory expenses {{ $summary['expenses_today'] }}
+                        &minus; Daily expenses {{ $summary['daily_today'] }}
+                    </small>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Daily (running) Expenses -->

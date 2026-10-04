@@ -171,6 +171,9 @@ class Summary extends Component
             'all_expenses_month' => number_format($expensesMonth + $dailyMonth, 0, '.', ','),
             'generated_amount' => number_format($invoiceTodayQuery->sum('total_invoice_amount') + $quickToday, 2, '.', ','),
             'paid_amount'      => number_format($sumToday + $quickToday, 2, '.', ','),
+            // Balance (Today) = money received today - expenses recorded today.
+            'balance_today_raw' => ($sumToday + $quickToday) - ($expensesToday + $dailyToday),
+            'balance_today'    => number_format(($sumToday + $quickToday) - ($expensesToday + $dailyToday), 2, '.', ','),
             'unpaid_amount'    => number_format($invoiceTodayQuery->sum('amount_remained'), 2, '.', ','),
             'unpaid_overall'   => number_format($invoiceQuery->sum('amount_remained'), 2, '.', ','),
             'pending'          => number_format($invoiceTodayQuery->where('status','Pending')->count(), 0, '.', ','),
