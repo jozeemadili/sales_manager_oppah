@@ -10,6 +10,7 @@ use App\Models\Store;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use App\Http\Livewire\SalesManagement\QuickSale;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -153,6 +154,11 @@ class Summary extends Component
             })
             ->sum('amount_submitted');
 
+        // Quick (cash) sales have no invoice but count as generated and paid.
+        $quickToday = (float) $this->quickSales()
+            ->whereBetween('s.date_sold', [$startTime, $endTime])
+            ->sum(DB::raw('s.selling_price * s.quantity'));
+
         // --- SUMMARY DATA ---
         $this->summary = [
             'sumProduct'       => number_format($sumProduct, 0, '.', ','),
@@ -163,8 +169,8 @@ class Summary extends Component
             'daily_today'      => number_format($dailyToday, 0, '.', ','),
             'daily_month'      => number_format($dailyMonth, 0, '.', ','),
             'all_expenses_month' => number_format($expensesMonth + $dailyMonth, 0, '.', ','),
-            'generated_amount' => number_format($invoiceTodayQuery->sum('total_invoice_amount'), 2, '.', ','),
-            'paid_amount'      => number_format($sumToday, 2, '.', ','),
+            'generated_amount' => number_format($invoiceTodayQuery->sum('total_invoice_amount') + $quickToday, 2, '.', ','),
+            'paid_amount'      => number_format($sumToday + $quickToday, 2, '.', ','),
             'unpaid_amount'    => number_format($invoiceTodayQuery->sum('amount_remained'), 2, '.', ','),
             'unpaid_overall'   => number_format($invoiceQuery->sum('amount_remained'), 2, '.', ','),
             'pending'          => number_format($invoiceTodayQuery->where('status','Pending')->count(), 0, '.', ','),
@@ -244,7 +250,9 @@ class Summary extends Component
             ->when($companyId != 1, fn ($q) => $q->where('d.company_id', $companyId))
             ->when($storeId, fn ($q) => $q->where('d.store_id', $storeId));
 
-        $this->sales = $series($sales, 'invoice_date', 'amount_paid');
+        $invoiceSales = $series($sales, 'invoice_date', 'amount_paid');
+        $quickSales = $series($this->quickSales(), 's.date_sold', 's.selling_price * s.quantity');
+        $this->sales = array_map(fn ($a, $b) => $a + $b, $invoiceSales, $quickSales);
         $this->expensesChart = $series($inventoryExpenses, 'r.reg_at', 'r.amount_used');
         $this->dailyChart = $series($dailyExpenses, 'd.expense_date', 'd.amount');
 
@@ -271,6 +279,39 @@ class Summary extends Component
     }
 
     /**
+     * Completed Mbao quick (cash) sales: no invoice is created for them, so
+     * they are added to the invoice-based figures separately. Amount is
+     * selling_price x quantity; always fully paid.
+     */
+    private function quickSales()
+    {
+        $companyId = Auth::user()->company_id;
+
+        return DB::table('sales as s')
+            ->join('products as p', 'p.id', '=', 's.product_id')
+            ->where('s.customer_id', QuickSale::WALK_IN_CUSTOMER)
+            ->whereIn('s.status', QuickSale::SOLD_STATUSES)
+            ->when($companyId != 1, fn ($q) => $q->where('s.company_id', $companyId))
+            ->when($this->storeId !== 'all', fn ($q) => $q->where('p.store_id', $this->storeId));
+    }
+
+    // One quick-sale transaction = the items one cashier completed in one go.
+    private function quickSaleTransactionsToday()
+    {
+        return $this->quickSales()
+            ->leftJoin('users as u', 'u.id', '=', 's.sold_by')
+            ->whereBetween('s.date_sold', [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()])
+            ->groupBy('s.sold_by', 's.date_sold', 'u.first_name')
+            ->orderBy('s.date_sold')
+            ->get([
+                's.sold_by', 's.date_sold', 'u.first_name',
+                DB::raw('MIN(s.id) as first_id'),
+                DB::raw('COUNT(*) as items'),
+                DB::raw('SUM(s.selling_price * s.quantity) as total'),
+            ]);
+    }
+
+    /**
      * List the invoices / payments behind one of the invoice cards.
      * Uses the same scope as the cards: Mzinga store, user's company.
      */
@@ -285,9 +326,11 @@ class Summary extends Component
                 ->whereDate('date_payed', Carbon::today())
                 ->when($this->storeId !== 'all', fn ($q) => $q->whereHas('invoice.customer', fn ($c) => $c->where('store_id', $this->storeId)));
 
+            $quick = $this->quickSaleTransactionsToday();
+
             $this->detailTitle = 'Payments Received Today';
-            $this->detailCount = (clone $query)->count();
-            $this->detailTotal = (float) (clone $query)->sum('amount_submitted');
+            $this->detailCount = (clone $query)->count() + $quick->count();
+            $this->detailTotal = (float) (clone $query)->sum('amount_submitted') + (float) $quick->sum('total');
             $this->detailByStatus = [];
             $this->detailRows = $query->orderByDesc('date_payed')->limit(self::DETAIL_LIMIT)->get()
                 ->map(fn ($p) => [
@@ -296,9 +339,21 @@ class Summary extends Component
                     'customer' => optional(optional($p->invoice)->customer)->name,
                     'amount' => (float) $p->amount_submitted,
                     'time' => Carbon::parse($p->date_payed)->format('H:i'),
+                    'sort' => Carbon::parse($p->date_payed)->timestamp,
                     'by' => $p->payer_id,
                     'channel' => $p->channel,
-                ])->all();
+                ])
+                ->concat($quick->map(fn ($q) => [
+                    'receipt' => 'QUICK-'.$q->first_id,
+                    'invoice_id' => null,
+                    'customer' => 'Walk-in ('.$q->items.' '.($q->items == 1 ? 'item' : 'items').')',
+                    'amount' => (float) $q->total,
+                    'time' => Carbon::parse($q->date_sold)->format('H:i'),
+                    'sort' => Carbon::parse($q->date_sold)->timestamp,
+                    'by' => $q->first_name,
+                    'channel' => 'Quick Sale',
+                ]))
+                ->sortByDesc('sort')->values()->all();
         } else {
             $query = Invoice::with('customer')
                 ->when($companyId != 1, fn ($q) => $q->where('company_id', $companyId))
@@ -337,6 +392,27 @@ class Summary extends Component
                     'paid' => (float) $i->amount_paid,
                     'remained' => (float) $i->amount_remained,
                 ])->all();
+
+            // Quick (cash) sales count as generated today too.
+            if ($type === 'generated_today') {
+                $quick = $this->quickSaleTransactionsToday();
+
+                if ($quick->isNotEmpty()) {
+                    $this->detailCount += $quick->count();
+                    $this->detailTotal += (float) $quick->sum('total');
+                    $this->detailByStatus[] = ['status' => 'Quick Sale', 'n' => $quick->count(), 'amount' => (float) $quick->sum('total')];
+                    $this->detailRows = array_merge($this->detailRows, $quick->map(fn ($q) => [
+                        'id' => null,
+                        'date' => Carbon::parse($q->date_sold)->format('d/m/Y H:i'),
+                        'age' => 0,
+                        'customer' => 'Walk-in ('.$q->items.' '.($q->items == 1 ? 'item' : 'items').', by '.$q->first_name.')',
+                        'status' => 'Quick Sale',
+                        'total' => (float) $q->total,
+                        'paid' => (float) $q->total,
+                        'remained' => 0,
+                    ])->all());
+                }
+            }
         }
 
         $this->detailType = $type;

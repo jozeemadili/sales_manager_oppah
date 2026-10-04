@@ -45,6 +45,39 @@
         </div>
     </div>
 
+    <!-- Fixed store notice -->
+    <div class="alert alert-light border text-center mb-4">
+        <i class="icofont icofont-store"></i>
+        You are viewing stock from <strong>{{ strtoupper($chartStoreName) }}</strong> store
+    </div>
+
+    <!-- Stock & Expenses -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card income-card card-secondary text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-abacus-alt" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['sumProduct'] }}</h5>
+                    <p>Stock Value (Selling Price)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card income-card card-primary text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-price" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['sumProductCost'] }}</h5>
+                    <p>Stock Value (Cost Price)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Summary Cards -->
     <div class="row mb-4">
         
@@ -141,40 +174,6 @@
         </div>
     </div>
 
-    <!-- Fixed store notice -->
-    <div class="alert alert-light border text-center mb-4">
-        <i class="icofont icofont-store"></i>
-        You are viewing stock from <strong>{{ strtoupper($chartStoreName) }}</strong> store
-    </div>
-
-    <!-- Stock & Expenses -->
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card income-card card-secondary text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-abacus-alt" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['sumProduct'] }}</h5>
-                    <p>Stock Value (Selling Price)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card income-card card-primary text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-price" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['sumProductCost'] }}</h5>
-                    <p>Stock Value (Cost Price)</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
     @if(count($dailyBreakdown))
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -261,7 +260,7 @@
                         <span class="badge bg-primary fs-6">{{ number_format($detailCount) }} {{ $detailType === 'paid_today' ? 'payments' : 'invoices' }}</span>
                         <span class="badge bg-dark fs-6">Total: {{ number_format($detailTotal, 0) }} TZS</span>
                         @foreach($detailByStatus as $st)
-                            <span class="badge {{ $st['status'] === 'Pending' ? 'bg-warning text-dark' : ($st['status'] === 'Paid' ? 'bg-danger' : 'bg-light text-dark border') }}">
+                            <span class="badge {{ $st['status'] === 'Pending' ? 'bg-warning text-dark' : ($st['status'] === 'Paid' ? 'bg-danger' : ($st['status'] === 'Quick Sale' ? 'bg-success' : 'bg-light text-dark border')) }}">
                                 {{ $st['status'] ?: 'No status' }}: {{ $st['n'] }} &middot; {{ number_format($st['amount'], 0) }}
                             </span>
                         @endforeach
@@ -288,7 +287,13 @@
                                 <tr>
                                     <td>{{ $row['time'] }}</td>
                                     <td><small>{{ $row['receipt'] }}</small></td>
-                                    <td><a href="{{ route('invoice-preview', $row['invoice_id']) }}" target="_blank">#{{ $row['invoice_id'] }}</a></td>
+                                    <td>
+                                        @if($row['invoice_id'])
+                                            <a href="{{ route('invoice-preview', $row['invoice_id']) }}" target="_blank">#{{ $row['invoice_id'] }}</a>
+                                        @else
+                                            <span class="badge bg-success">Quick Sale</span>
+                                        @endif
+                                    </td>
                                     <td>{{ strtoupper($row['customer']) }}</td>
                                     <td><small>{{ $row['channel'] }}</small></td>
                                     <td>{{ $row['by'] }}</td>
@@ -305,11 +310,17 @@
                             <tbody>
                                 @forelse($detailRows as $row)
                                 <tr class="{{ $row['status'] === 'Paid' && $row['remained'] > 0 ? 'table-danger' : '' }}">
-                                    <td><a href="{{ route('invoice-preview', $row['id']) }}" target="_blank">#{{ $row['id'] }}</a></td>
+                                    <td>
+                                        @if($row['id'])
+                                            <a href="{{ route('invoice-preview', $row['id']) }}" target="_blank">#{{ $row['id'] }}</a>
+                                        @else
+                                            &mdash;
+                                        @endif
+                                    </td>
                                     <td><small>{{ $row['date'] }}</small></td>
                                     <td class="text-end">{{ $row['age'] }}</td>
                                     <td>{{ strtoupper($row['customer']) }}</td>
-                                    <td><span class="badge {{ $row['status'] === 'Pending' ? 'bg-warning text-dark' : 'bg-light text-dark border' }}">{{ $row['status'] }}</span></td>
+                                    <td><span class="badge {{ $row['status'] === 'Pending' ? 'bg-warning text-dark' : ($row['status'] === 'Quick Sale' ? 'bg-success' : 'bg-light text-dark border') }}">{{ $row['status'] }}</span></td>
                                     <td class="text-end">{{ number_format($row['total'], 0) }}</td>
                                     <td class="text-end">{{ number_format($row['paid'], 0) }}</td>
                                     <td class="text-end fw-semibold">{{ number_format($row['remained'], 0) }}</td>
