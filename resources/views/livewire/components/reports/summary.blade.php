@@ -1,4 +1,140 @@
 <div>
+    <!-- Sales vs Expenses Chart -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="mb-0">Payment Trends &mdash; {{ strtoupper($chartStoreName) }}</h5>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Chart period">
+                <button type="button" wire:click="$set('chartPeriod', 'week')" class="btn {{ $chartPeriod === 'week' ? 'btn-primary' : 'btn-outline-primary' }}">Week</button>
+                <button type="button" wire:click="$set('chartPeriod', 'month')" class="btn {{ $chartPeriod === 'month' ? 'btn-primary' : 'btn-outline-primary' }}">Month</button>
+                <button type="button" wire:click="$set('chartPeriod', 'year')" class="btn {{ $chartPeriod === 'year' ? 'btn-primary' : 'btn-outline-primary' }}">Year</button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <!-- Period totals: Sales - (Inventory + Daily expenses) = Balance -->
+            <div class="row g-2 text-center px-3 pt-3">
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <div class="small text-muted">Total Sales</div>
+                        <div class="fw-bold">{{ number_format($chartTotals['sales'] ?? 0, 0) }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <div class="small text-muted">&minus; Inventory Expenses</div>
+                        <div class="fw-bold text-danger">{{ number_format($chartTotals['inventory'] ?? 0, 0) }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <div class="small text-muted">&minus; Daily Expenses</div>
+                        <div class="fw-bold text-warning">{{ number_format($chartTotals['daily'] ?? 0, 0) }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2 {{ ($chartTotals['balance'] ?? 0) < 0 ? 'border-danger' : 'border-success' }}">
+                        <div class="small text-muted">= Balance ({{ ucfirst($chartPeriod) }})</div>
+                        <div class="fw-bold {{ ($chartTotals['balance'] ?? 0) < 0 ? 'text-danger' : 'text-success' }}">{{ number_format($chartTotals['balance'] ?? 0, 0) }}</div>
+                    </div>
+                </div>
+            </div>
+            <figure class="highcharts-figure" wire:ignore>
+                <div id="container_sales"></div>
+            </figure>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        
+
+        <div class="col-lg-3">
+            <div class="card income-card card-secondary text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-abacus-alt" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['generated_amount'] }}</h5>
+                    <p>Total Generated Amount (Today)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card income-card card-primary text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-tick-boxed" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['paid_amount'] }}</h5>
+                    <p>Total Paid Amount (Today)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card income-card card-warning text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-exclamation-circle" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['unpaid_amount'] }}</h5>
+                    <p>Remaining (Unpaid) Amount (Today)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 mt-3">
+            <div class="card income-card card-danger text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-bank-alt" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['unpaid_overall'] }}</h5>
+                    <p>Total Unpaid Amount (All Time)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily (running) Expenses -->
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card income-card card-warning text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-clock-time" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['daily_today'] }}</h5>
+                    <p>Daily Expenses (Today)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card income-card card-secondary text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-calendar" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['daily_month'] }}</h5>
+                    <p>Daily Expenses (This Month)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card income-card card-danger text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-calculator-alt-2" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['all_expenses_month'] }}</h5>
+                    <p>Total Expenses This Month (Inventory + Daily)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Fixed store notice -->
     <div class="alert alert-light border text-center mb-4">
         <i class="icofont icofont-store"></i>
@@ -107,45 +243,6 @@
     </div>
     @endif
 
-    <!-- Daily (running) Expenses -->
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card income-card card-warning text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-clock-time" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['daily_today'] }}</h5>
-                    <p>Daily Expenses (Today)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card income-card card-secondary text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-calendar" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['daily_month'] }}</h5>
-                    <p>Daily Expenses (This Month)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card income-card card-danger text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-calculator-alt-2" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['all_expenses_month'] }}</h5>
-                    <p>Total Expenses This Month (Inventory + Daily)</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     @if(count($dailyBreakdown))
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -183,102 +280,6 @@
         </div>
     </div>
     @endif
-
-    <!-- Sales vs Expenses Chart -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <h5 class="mb-0">Payment Trends &mdash; {{ strtoupper($chartStoreName) }}</h5>
-            <div class="btn-group btn-group-sm" role="group" aria-label="Chart period">
-                <button type="button" wire:click="$set('chartPeriod', 'week')" class="btn {{ $chartPeriod === 'week' ? 'btn-primary' : 'btn-outline-primary' }}">Week</button>
-                <button type="button" wire:click="$set('chartPeriod', 'month')" class="btn {{ $chartPeriod === 'month' ? 'btn-primary' : 'btn-outline-primary' }}">Month</button>
-                <button type="button" wire:click="$set('chartPeriod', 'year')" class="btn {{ $chartPeriod === 'year' ? 'btn-primary' : 'btn-outline-primary' }}">Year</button>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <!-- Period totals: Sales - (Inventory + Daily expenses) = Balance -->
-            <div class="row g-2 text-center px-3 pt-3">
-                <div class="col-6 col-md-3">
-                    <div class="border rounded p-2">
-                        <div class="small text-muted">Total Sales</div>
-                        <div class="fw-bold">{{ number_format($chartTotals['sales'] ?? 0, 0) }}</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="border rounded p-2">
-                        <div class="small text-muted">&minus; Inventory Expenses</div>
-                        <div class="fw-bold text-danger">{{ number_format($chartTotals['inventory'] ?? 0, 0) }}</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="border rounded p-2">
-                        <div class="small text-muted">&minus; Daily Expenses</div>
-                        <div class="fw-bold text-warning">{{ number_format($chartTotals['daily'] ?? 0, 0) }}</div>
-                    </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="border rounded p-2 {{ ($chartTotals['balance'] ?? 0) < 0 ? 'border-danger' : 'border-success' }}">
-                        <div class="small text-muted">= Balance ({{ ucfirst($chartPeriod) }})</div>
-                        <div class="fw-bold {{ ($chartTotals['balance'] ?? 0) < 0 ? 'text-danger' : 'text-success' }}">{{ number_format($chartTotals['balance'] ?? 0, 0) }}</div>
-                    </div>
-                </div>
-            </div>
-            <figure class="highcharts-figure" wire:ignore>
-                <div id="container_sales"></div>
-            </figure>
-        </div>
-    </div>
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-        
-
-        <div class="col-lg-3">
-            <div class="card income-card card-secondary text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-abacus-alt" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['generated_amount'] }}</h5>
-                    <p>Total Generated Amount (Today)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="card income-card card-primary text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-tick-boxed" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['paid_amount'] }}</h5>
-                    <p>Total Paid Amount (Today)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3">
-            <div class="card income-card card-warning text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-exclamation-circle" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['unpaid_amount'] }}</h5>
-                    <p>Remaining (Unpaid) Amount (Today)</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-3 mt-3">
-            <div class="card income-card card-danger text-center">
-                <div class="card-body">
-                    <div class="round-box mb-2">
-                        <i class="icofont icofont-bank-alt" style="font-size: 40px;"></i>
-                    </div>
-                    <h5>{{ $summary['unpaid_overall'] }}</h5>
-                    <p>Total Unpaid Amount (All Time)</p>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Customer Summary -->
     <hr class="mt-4 mb-3">
