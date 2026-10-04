@@ -190,7 +190,7 @@ class inventoryManagentController extends Controller
       
             $stores = StoresTuli::where('company_id',Auth::user()->company_id)->where('status','Active')->orderBy('id','desc')->get();
             $Categories = CategoriesTuli::where('company_id',Auth::user()->company_id)->where('status','Active')->orderBy('id','desc')->get();
-               if(Auth::user()->role == 'ADMIN')
+               if(Auth::user()->hasFullAccess())
                 {
                     $Branch = ProductsTuli::where('company_id',Auth::user()->company_id)->orderBy('id','desc')->paginate(10);
         

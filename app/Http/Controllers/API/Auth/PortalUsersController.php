@@ -33,12 +33,12 @@ class PortalUsersController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->role == 'ADMIN') {
+        if ($user->hasFullAccess()) {
             return view('admin.dashboard.home');
-        } 
-        elseif ($user->role == 'Driver') 
+        }
+        elseif ($user->role == 'Driver')
         {
-            if (Auth::user()->role == 'ADMIN') {
+            if (Auth::user()->hasFullAccess()) {
                 // Admin sees all trucks
                 $OurTruck = OurTruck::orderBy('id', 'desc')->get();
             } 
@@ -67,6 +67,7 @@ class PortalUsersController extends Controller
         $Store = Store::where('company_id',Auth::user()->company_id)->orderBy('id','desc')->get();
         if(substr(Route::getCurrentRoute()->uri,3) == "security/users")
         {
+            abort_unless(Auth::user()->hasFullAccess(), 403);
             return view('admin.security.users',['users' => $users,'Store'=>$Store]);
         }
         return $users;
@@ -158,7 +159,12 @@ class PortalUsersController extends Controller
 
     public function register(Request $request)
     {
-        $request->validate(['first_name' => ['required', 'min:3'], 'email' => ['required', 'email','unique:users'],'password' => ['required','min:8','regex:/[a-z]/', 'regex:/[A-Z]/','regex:/[@$!%*#?&]/'], 'mobile' => ['required', 'min:9', 'max:9', 'unique:users']]);           
+        $request->validate(['first_name' => ['required', 'min:3'], 'email' => ['required', 'email','unique:users'],'password' => ['required','min:8','regex:/[a-z]/', 'regex:/[A-Z]/','regex:/[@$!%*#?&]/'], 'mobile' => ['required', 'min:9', 'max:9', 'unique:users']]);
+
+        if (!in_array($request->role, Auth::user()->assignableRoles())) {
+            return redirect()->route('portal-users')->with('error', 'You are not allowed to assign that role.');
+        }
+
         $user = User::create(
             [
                 'email'         => $request->email,
@@ -181,6 +187,40 @@ class PortalUsersController extends Controller
             ]);
             return redirect()->route('portal-users')->with('success', 'e-Mkopo User <b>'.strtoupper($request->first_name).' With user name ('.strtoupper($request->username).')</b> Successfully Registered  : ');
     }
+    public function updateStatus(Request $request, $id, $status)
+    {
+        if (!in_array($status, ['Active', 'Inactive'])) {
+            abort(404);
+        }
+
+        $user = User::findOrFail($id);
+
+        if (!Auth::user()->canManage($user)) {
+            return redirect()->route('portal-users')->with('error', 'You are not allowed to change this user\'s status.');
+        }
+
+        $user->status = $status;
+        $user->save();
+
+        return redirect()->route('portal-users')->with('success', 'User status updated successfully.');
+    }
+
+    public function updateRole(Request $request, $id)
+    {
+        $request->validate(['role' => ['required']]);
+
+        $user = User::findOrFail($id);
+
+        if (!Auth::user()->canManage($user) || !in_array($request->role, Auth::user()->assignableRoles())) {
+            return redirect()->route('portal-users')->with('error', 'You are not allowed to assign that role.');
+        }
+
+        $user->role = $request->role;
+        $user->save();
+
+        return redirect()->route('portal-users')->with('success', 'User role updated successfully.');
+    }
+
     public function loginWeb(Request $request)
     {
         $credentials = $request->validate(['email' => ['required', 'email'],'password' => ['required']]);

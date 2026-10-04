@@ -278,6 +278,8 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
    
     Route::post('security/users/profile/change_password', [PortalUsersController::class, 'change_password'])->name('security-user-change_password');
     Route::post('security/users/add', [PortalUsersController::class, 'register'])->name('portal-users-add');
+    Route::get('security/user/status/manage/{id}/{status}', [PortalUsersController::class, 'updateStatus'])->name('portal-user-status-update');
+    Route::post('security/users/{id}/role', [PortalUsersController::class, 'updateRole'])->name('portal-users-update-role');
     Route::view('security/configurations', 'admin.security.configurations')->name('security-system-configurations');
     Route::view('security/configurations', 'admin.security.configurations')->name('security-system-configurations');
     Route::view('security/audit', 'admin.security.audit')->name('security-system-audit-trail');

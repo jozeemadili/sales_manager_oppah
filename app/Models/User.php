@@ -131,6 +131,47 @@ class User extends Authenticatable
 		'office_location'
 	];
 
+	const ROLE_SUPER_ADMIN = 'SUPER_ADMIN';
+	const ROLE_ADMIN = 'ADMIN';
+	const ROLE_MBAO = 'Mbao';
+	const ROLE_HARDWARE = 'Hardware';
+	const ROLE_DRIVER = 'Driver';
+
+	public function isSuperAdmin()
+	{
+		return $this->role === self::ROLE_SUPER_ADMIN;
+	}
+
+	public function hasFullAccess()
+	{
+		return in_array($this->role, [self::ROLE_ADMIN, self::ROLE_SUPER_ADMIN]);
+	}
+
+	public function assignableRoles()
+	{
+		if ($this->isSuperAdmin()) {
+			return [self::ROLE_SUPER_ADMIN, self::ROLE_ADMIN, self::ROLE_MBAO, self::ROLE_HARDWARE, self::ROLE_DRIVER];
+		}
+
+		if ($this->hasFullAccess()) {
+			return [self::ROLE_MBAO, self::ROLE_HARDWARE, self::ROLE_DRIVER];
+		}
+
+		return [];
+	}
+
+	// Whether this user may change another user's role/status. Nobody manages
+	// their own account here (avoids self-lockout); ADMINs only manage the
+	// roles they could assign, SUPER_ADMINs manage everyone else.
+	public function canManage(User $target)
+	{
+		if ($this->id === $target->id || !$this->hasFullAccess()) {
+			return false;
+		}
+
+		return $this->isSuperAdmin() || in_array($target->role, $this->assignableRoles());
+	}
+
 	public function company()
 	{
 		return $this->belongsTo(Company::class);

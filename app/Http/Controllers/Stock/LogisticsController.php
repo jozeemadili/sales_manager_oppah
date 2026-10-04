@@ -95,7 +95,7 @@ class LogisticsController extends Controller
             // return $pdf;
     public function getTriproutes()
     {
-        if (Auth::user()->role == 'ADMIN') {
+        if (Auth::user()->hasFullAccess()) {
             // Admin sees all trucks
             $OurTruck = OurTruck::orderBy('id', 'desc')->get();
         } 

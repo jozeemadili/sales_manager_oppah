@@ -30,7 +30,7 @@ class ProductsController extends Controller
       
             $stores = Store::where('company_id',Auth::user()->company_id)->where('status','Active')->orderBy('id','desc')->get();
             $Categories = Category::where('company_id',Auth::user()->company_id)->where('status','Active')->orderBy('id','desc')->get();
-               if(Auth::user()->role == 'ADMIN')
+               if(Auth::user()->hasFullAccess())
                 {
                     $Branch = Product::where('company_id',Auth::user()->company_id)->orderBy('id','desc')->paginate(10);
         
@@ -84,7 +84,7 @@ class ProductsController extends Controller
     }
     public function categoryPreview($id) 
     {
-        if(Auth::user()->role == 'ADMIN')
+        if(Auth::user()->hasFullAccess())
         {
             $Products = Product::where('category',$id)->paginate(10);
             $AllProducts = Product::where('category',$id)->get();
@@ -504,7 +504,7 @@ class ProductsController extends Controller
             'description' => 'nullable|string',
         ]);
         
-        if(Auth::user()->role == 'ADMIN')
+        if(Auth::user()->hasFullAccess())
         {
             $user = Product::create(   
                 [

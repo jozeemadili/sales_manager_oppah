@@ -11,7 +11,7 @@
         @endslot
 
         @slot('breadcrumb_action_buttons')
-            @if(Auth::user()->role == 'ADMIN')
+            @if(Auth::user()->hasFullAccess())
                 <li>
                     <!-- <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newModal">
                         New <i class="icofont icofont-plus-circle"></i>

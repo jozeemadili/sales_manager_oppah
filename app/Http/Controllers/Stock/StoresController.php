@@ -12,7 +12,7 @@ class StoresController extends Controller
 {
     public function get()
     {
-        if(Auth::user()->role == 'ADMIN')
+        if(Auth::user()->hasFullAccess())
         {
             $Branch = Store::where('company_id',Auth::user()->company_id)->orderBy('id','desc')->paginate(10);
         }else

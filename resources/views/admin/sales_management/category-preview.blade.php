@@ -46,7 +46,7 @@
                     <span>Total Products</span>
                     <strong>{{ count($AllProducts) }}</strong>
                 </li>
-                @if(Auth::user()->role == 'ADMIN' )
+                @if(Auth::user()->hasFullAccess() )
                 <li class="list-group-item d-flex justify-content-between">
                     <span>Total Stock Value</span>
                     <strong>
@@ -100,11 +100,11 @@
                                             <th>Barcode</th>
                                             <th>Qty Recorded</th>
                                             <th>Qty Remained</th>
-                                            @if(Auth::user()->role == 'ADMIN' )
+                                            @if(Auth::user()->hasFullAccess() )
                                             <th>Purchasing Price</th>
                                             @endif
                                             <th>Selling Price</th>
-                                            @if(Auth::user()->role == 'ADMIN' )
+                                            @if(Auth::user()->hasFullAccess() )
                                             <th>Expected Profit/Loss</th>
                                             @endif
                                             
@@ -126,11 +126,11 @@
                                                 <td>{{ number_format($product->qty, 2) }}</td>
                                                 
                                                 <td>{{ number_format($product->qty_remained, 2) }}</td>
-                                                @if(Auth::user()->role == 'ADMIN' )
+                                                @if(Auth::user()->hasFullAccess() )
                                                 <td>{{ number_format($product->purchasing_price, 2) }}</td>
                                                 @endif
                                                 <td>{{ number_format($product->selling_price, 2) }}</td>
-                                                @if(Auth::user()->role == 'ADMIN' )
+                                                @if(Auth::user()->hasFullAccess() )
                                                 <td style="color: {{ $profit < 0 ? 'red' : 'green' }};">
                                                     {{ number_format($profit, 2) }}
                                                 </td>

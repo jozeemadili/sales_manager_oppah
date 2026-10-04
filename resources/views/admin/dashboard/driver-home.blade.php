@@ -52,7 +52,7 @@
                             
     
                             <div class="col-md-4">
-                                @if(Auth::user()->role == 'ADMIN')
+                                @if(Auth::user()->hasFullAccess())
                                 <div class="form-group">
                                     <label>Truck</label>
                                     <select class="form-control" name="truck_id" required>

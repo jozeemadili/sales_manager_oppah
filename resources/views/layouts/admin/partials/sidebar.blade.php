@@ -18,19 +18,19 @@
                     <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="bar-chart"></i><span>Summary</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/dashboard') || request()->is('v1/summary')) ? 'block' : '' }};">
-                            @if(Auth::user()->role == 'ADMIN')
+                            @if(Auth::user()->hasFullAccess())
                             <li><a href="{{route('home-overview')}}" class="{{routeActive('home-overview')}}"> - Overview (All Modules)</a></li>
                             @endif
 
-                            @if(Auth::user()->role == 'Mbao' || Auth::user()->role == 'ADMIN')
+                            @if(Auth::user()->role == 'Mbao' || Auth::user()->hasFullAccess())
                             <li><a href="{{route('home')}}" class="{{routeActive('home')}}"> - Summary Mbao</a></li>
                             @endif
 
-                            @if(Auth::user()->role == 'ADMIN' || Auth::user()->role == 'Driver')
+                            @if(Auth::user()->hasFullAccess() || Auth::user()->role == 'Driver')
                             <li><a href="{{route('home-truck')}}" class="{{routeActive('home-truck')}}"> - Summary Trucks</a></li>
                             @endif
 
-                            @if(Auth::user()->role == 'Hardware' || Auth::user()->role == 'ADMIN')
+                            @if(Auth::user()->role == 'Hardware' || Auth::user()->hasFullAccess())
                             <li><a href="{{route('home-hardcore')}}" class="{{routeActive('home-hardcore')}}"> - Summary Hardware</a></li>
                             @endif
 
@@ -45,7 +45,7 @@
                         <li><a href="{{route('leave-management')}}" class="{{routeActive('leave-management')}}"> - Leave</a></li>
                         </ul>
                     </li>  -->
-                    @if(Auth::user()->role == 'ADMIN')
+                    @if(Auth::user()->hasFullAccess())
                     <!-- <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>HRMS</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
@@ -59,7 +59,7 @@
                     @endif
                     
                 @if(Auth::user()->role != 'Driver')
-                @if(Auth::user()->role == 'Mbao' || Auth::user()->role == 'ADMIN')
+                @if(Auth::user()->role == 'Mbao' || Auth::user()->hasFullAccess())
                   <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Inventory (mbao)</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
@@ -77,7 +77,7 @@
                         </ul>
                     </li>
                     @endif
-                    @if(Auth::user()->role == 'Hardware' || Auth::user()->role == 'ADMIN')
+                    @if(Auth::user()->role == 'Hardware' || Auth::user()->hasFullAccess())
                     <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Inventory (hard ware)</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
@@ -112,7 +112,7 @@
                         <li><a href="#" class="#"> - Customers</a></li> -->
                         <!-- </ul> -->
                     </li>
-                    @if(Auth::user()->role == 'ADMIN')
+                    @if(Auth::user()->hasFullAccess())
                     <!-- <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Vending Machine</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
@@ -141,7 +141,7 @@
                        
                         {{-- <li><a href="{{route('truck-drivers')}}" class="{{routeActive('truck-drivers')}}">  - Trucks & Drivers</a></li> --}}
                        
-                        {{-- @if(Auth::user()->role == 'ADMIN' || Auth::user()->role == 'Driver') --}}
+                        {{-- @if(Auth::user()->hasFullAccess() || Auth::user()->role == 'Driver') --}}
                         <li><a href="{{route('trips-management')}}" class="{{routeActive('trips-management')}}">  - Trips</a></li>
                         <li><a href="{{route('truck-reports')}}" class="{{routeActive('truck-reports')}}">  - Truck Reports</a></li>
                         {{-- <li><a href="{{route('truck-ejy')}}" class="{{routeActive('truck-ejy')}}">  - Report for T821EJY</a></li> --}}
@@ -154,7 +154,7 @@
                     </li>
                     @endif
 
-                    @if(Auth::user()->role == 'ADMIN')
+                    @if(Auth::user()->hasFullAccess())
                     <li class="dropdown">
                         <a class="nav-link menu-title {{(request()->is('v1/products/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="grid"></i><span>Logistics</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/products/*')) ? 'block' : '' }};">
@@ -177,7 +177,7 @@
                         <a class="nav-link menu-title {{(request()->is('v1/security/*')) ? 'active' : ''}}" href="javascript:void(0)"><i data-feather="settings"></i><span>Security & Settings</span></a>
                         <ul class="nav-submenu menu-content" style="display: {{ (request()->is('v1/security/*')) ? 'block' : '' }};">
                             <li><a href="{{route('security-user-profile')}}" class="{{routeActive('security-user-profile')}}"> - Your Profile</a></li>
-                            @if(Auth::user()->role == 'ADMIN' )
+                            @if(Auth::user()->hasFullAccess() )
                                 <li><a href="{{route('portal-users')}}" class="{{routeActive('portal-users')}}"> - System Users</a></li>
                             @endif
                         </ul>

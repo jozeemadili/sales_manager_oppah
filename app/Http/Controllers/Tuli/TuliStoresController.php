@@ -12,7 +12,7 @@ class TuliStoresController extends Controller
 {
     public function get()
     {
-        if(Auth::user()->role == 'ADMIN')
+        if(Auth::user()->hasFullAccess())
         {
             $Branch = StoresTuli::where('company_id',Auth::user()->company_id)->orderBy('id','desc')->paginate(10);
         }else

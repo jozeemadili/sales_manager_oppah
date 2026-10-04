@@ -70,11 +70,11 @@
                                     <th scope="col">barcode</th>
                                     <th scope="col">quantity Recorded</th>
                                     <th scope="col">quantity Remained</th>
-                                    @if(Auth::user()->role == 'ADMIN')
+                                    @if(Auth::user()->hasFullAccess())
                                     <th scope="col">purchasing price</th>
                                     @endif
                                     <th scope="col">selling price</th>
-                                    @if(Auth::user()->role == 'ADMIN')
+                                    @if(Auth::user()->hasFullAccess())
                                     <th scope="col"> Expected profit/loss</th>
                                     @endif
                                     
@@ -93,11 +93,11 @@
                                     <td>{{$user->barcode}}</td>
                                     <td>{{number_format($user->qty, 2)}}</td>
                                     <td>{{number_format($user->qty_remained, 2)}}</td>
-                                    @if(Auth::user()->role == 'ADMIN')
+                                    @if(Auth::user()->hasFullAccess())
                                     <td>{{number_format($user->purchasing_price, 2)}}</td>
                                     @endif
                                     <td>{{number_format($user->selling_price, 2)}}</td>
-                                    @if(Auth::user()->role == 'ADMIN')
+                                    @if(Auth::user()->hasFullAccess())
                                     <td style="color: {{ ($user->qty * $user->selling_price) - ($user->qty * $user->purchasing_price)   < 0 ? 'red' : 'green' }};">
                                         {{ number_format(($user->qty * $user->selling_price) - ($user->qty * $user->purchasing_price), 2) }}
                                     </td>
