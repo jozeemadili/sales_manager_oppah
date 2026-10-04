@@ -292,12 +292,12 @@ class LogisticsController extends Controller
     }
     
    
-    // public function getTriproutesReports()
     public function getTriproutesReports(Request $request)
     {
         $truckId = $request->input('truck_id');
         $month = $request->input('month');
 
+        // Determine trucks based on route
         if ($request->route()->getName() == 'truck-ejy') {
             $truckId = 3;
             $trucks = OurTruck::where('id', 3)->get();
@@ -305,38 +305,38 @@ class LogisticsController extends Controller
             $truckId = 5;
             $trucks = OurTruck::where('id', 5)->get();
         } else {
-            // $trucks = OurTruck::all();
+            // Exclude trucks 3 and 5
             $trucks = OurTruck::whereNotIn('id', [3, 5])->get();
         }
-        // Force truck based on route
-        // if ($request->route()->getName() == 'truck-ejy') {
-        //     $truckId = 3; // ID of EJY truck
-        // }
-    
-        // if ($request->route()->getName() == 'truck-erw') {
-        //     $truckId = 5; // ID of ERW truck
-        // }
-    
+
         $query = TrucksRoute::with(['routePlans', 'expensesRecords']);
-    
+
         if ($truckId) {
+            // Filter by selected truck
             $query->where('truck_id', $truckId);
+        } else {
+            // On the general report, exclude routes for trucks 3 and 5
+            $query->whereNotIn('truck_id', [3, 5]);
         }
-    
+
         if ($month) {
             $query->whereYear('route_date', substr($month, 0, 4))
                   ->whereMonth('route_date', substr($month, 5, 2));
         }
-    
+
         $TrucksRoutes = $query->get();
-    
+
         $totalTransportFee = $TrucksRoutes->sum('total_fee');
-        $totalRouteFuel = $TrucksRoutes->flatMap(fn($route) => $route->routePlans)->sum('amount_tsh');
-        $totalExpenses = $TrucksRoutes->flatMap(fn($route) => $route->expensesRecords)->sum('amount_used');
+        $totalRouteFuel = $TrucksRoutes->flatMap(function ($route) {
+            return $route->routePlans;
+        })->sum('amount_tsh');
+
+        $totalExpenses = $TrucksRoutes->flatMap(function ($route) {
+            return $route->expensesRecords;
+        })->sum('amount_used');
+
         $balanceRemaining = $totalTransportFee - $totalRouteFuel - $totalExpenses;
-    
-        // $trucks = OurTruck::all();
-    
+
         return view('admin.sales_management.truck-reports', [
             'TrucksRoutes' => $TrucksRoutes,
             'totalTransportFee' => $totalTransportFee,
