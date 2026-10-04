@@ -16,6 +16,7 @@ use App\Http\Controllers\WhatsAppGatewayController;
 
 use App\Http\Controllers\Stock\ProductsController;
 use App\Http\Controllers\Stock\StoresController;
+use App\Http\Controllers\Stock\DailyExpensesController;
 use App\Http\Controllers\Tuli\TuliStoresController;
 use App\Http\Controllers\Tuli\inventoryManagentController;
 use App\Http\Controllers\Tuli\CategoriesController as TuliCategoriesController;
@@ -140,6 +141,13 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
 
     Route::get('invetories/management', [CategoriesController::class, 'getInventories'])->name('invetories-management');
     Route::get('expenses/management', [CategoriesController::class, 'getExpensies'])->name('expenses-management');
+
+    // Mbao daily (running) expenses — separate from inventory expenses
+    Route::get('expenses/daily', [DailyExpensesController::class, 'index'])->name('daily-expenses');
+    Route::post('expenses/daily', [DailyExpensesController::class, 'store'])->name('daily-expenses-store');
+    Route::post('expenses/daily/types', [DailyExpensesController::class, 'storeType'])->name('daily-expense-types-store');
+    Route::post('expenses/daily/{id}', [DailyExpensesController::class, 'update'])->name('daily-expenses-update');
+    Route::post('expenses/daily/{id}/delete', [DailyExpensesController::class, 'destroy'])->name('daily-expenses-delete');
 
    
     

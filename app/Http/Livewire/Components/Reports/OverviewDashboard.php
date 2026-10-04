@@ -92,8 +92,15 @@ class OverviewDashboard extends Component
             'r.company_id'
         )->sum('r.amount_used');
 
+        $dailyMonth = $this->scopeByCompany(
+            DB::table('daily_expenses')
+                ->where('status', 'Active')
+                ->whereBetween('expense_date', [Carbon::now()->startOfMonth()->toDateString(), Carbon::today()->toDateString()])
+        )->sum('amount');
+
         $this->mbao = [
             'expenses_to_date' => $expensesToDate,
+            'daily_month'      => $dailyMonth,
             'stock_value'     => $stockValue,
             'generated_today' => $invoiceTodayQuery->sum('total_invoice_amount'),
             'paid_today'      => $paidToday,

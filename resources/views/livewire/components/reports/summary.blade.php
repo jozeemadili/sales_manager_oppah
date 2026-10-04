@@ -44,7 +44,7 @@
                         <i class="icofont icofont-money-bag" style="font-size: 40px;"></i>
                     </div>
                     <h5>{{ $summary['expenses_to_date'] }}</h5>
-                    <p>Total Expenses (To Date)</p>
+                    <p>Inventory Expenses (To Date)</p>
                 </div>
             </div>
         </div>
@@ -56,7 +56,7 @@
                         <i class="icofont icofont-calendar" style="font-size: 40px;"></i>
                     </div>
                     <h5>{{ $summary['expenses_month'] }}</h5>
-                    <p>Expenses (This Month)</p>
+                    <p>Inventory Expenses (This Month)</p>
                 </div>
             </div>
         </div>
@@ -68,7 +68,7 @@
                         <i class="icofont icofont-clock-time" style="font-size: 40px;"></i>
                     </div>
                     <h5>{{ $summary['expenses_today'] }}</h5>
-                    <p>Expenses (Today)</p>
+                    <p>Inventory Expenses (Today)</p>
                 </div>
             </div>
         </div>
@@ -77,7 +77,7 @@
     @if(count($expenseBreakdown))
     <div class="card">
         <div class="card-header">
-            <h5>Expenses by Type (To Date)</h5>
+            <h5>Inventory Expenses by Type (To Date)</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -103,6 +103,83 @@
                             <td>Total</td>
                             <td class="text-end">{{ collect($expenseBreakdown)->sum('entries') }}</td>
                             <td class="text-end">{{ $summary['expenses_to_date'] }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Daily (running) Expenses -->
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card income-card card-warning text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-clock-time" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['daily_today'] }}</h5>
+                    <p>Daily Expenses (Today)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card income-card card-secondary text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-calendar" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['daily_month'] }}</h5>
+                    <p>Daily Expenses (This Month)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card income-card card-danger text-center">
+                <div class="card-body">
+                    <div class="round-box mb-2">
+                        <i class="icofont icofont-calculator-alt-2" style="font-size: 40px;"></i>
+                    </div>
+                    <h5>{{ $summary['all_expenses_month'] }}</h5>
+                    <p>Total Expenses This Month (Inventory + Daily)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if(count($dailyBreakdown))
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Daily Expenses by Type (This Month)</h5>
+            <a href="{{ route('daily-expenses') }}" class="btn btn-outline-primary btn-xs">Open Daily Expenses</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Expense</th>
+                            <th class="text-end">Entries</th>
+                            <th class="text-end">Amount (TZS)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($dailyBreakdown as $row)
+                        <tr>
+                            <td>{{ strtoupper($row['name']) }}</td>
+                            <td class="text-end">{{ $row['entries'] }}</td>
+                            <td class="text-end">{{ number_format($row['total'], 0) }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold">
+                            <td>Total</td>
+                            <td class="text-end">{{ collect($dailyBreakdown)->sum('entries') }}</td>
+                            <td class="text-end">{{ $summary['daily_month'] }}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -228,6 +305,7 @@
 document.addEventListener('livewire:load', function () {
     let salesData = @json($sales);
     let expensesData = @json($expensesChart);
+    let dailyData = @json($dailyChart);
 
     function renderChart() {
         Highcharts.chart('container_sales', {
@@ -239,7 +317,8 @@ document.addEventListener('livewire:load', function () {
             tooltip: { valueSuffix: ' TZS', shared: true },
             series: [
                 { name: 'Total Sales', data: salesData },
-                { name: 'Expenses', data: expensesData, color: '#e74c3c' }
+                { name: 'Inventory Expenses', data: expensesData, color: '#e74c3c' },
+                { name: 'Daily Expenses', data: dailyData, color: '#f39c12' }
             ]
         });
     }
@@ -247,9 +326,10 @@ document.addEventListener('livewire:load', function () {
     renderChart();
 
     // Fresh data arrives with each update (e.g. changing the store).
-    Livewire.on('salesUpdated', (sales, expenses) => {
+    Livewire.on('salesUpdated', (sales, expenses, daily) => {
         salesData = sales;
         expensesData = expenses;
+        dailyData = daily;
         setTimeout(renderChart, 0); // after Livewire has finished patching the DOM
     });
 

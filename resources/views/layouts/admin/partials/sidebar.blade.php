@@ -68,6 +68,7 @@
                         <li><a href="{{route('invetories-management')}}" class="{{routeActive('invetories-management')}}">  - Invetories</a></li>
                         <li><a href="{{route('my-suppliers')}}" class="{{routeActive('my-suppliers')}}">  - My Suppliers</a></li>
                         <li><a href="{{route('expenses-management')}}" class="{{routeActive('expenses-management')}}">  - Expenses</a></li>
+                        <li><a href="{{route('daily-expenses')}}" class="{{routeActive('daily-expenses')}}">  - Daily Expenses</a></li>
                         <li><a href="{{route('product-registration')}}" class="{{routeActive('product-registration')}}">  - Stock Management</a></li>
                         <!-- <li><a href="{{route('operate-sale')}}" class="{{routeActive('operate-sale')}}">  - Operate Sale</a></li> -->
                         <li><a href="{{route('customers-management')}}" class="{{routeActive('customers-management')}}">  - Sales/Customers</a></li>

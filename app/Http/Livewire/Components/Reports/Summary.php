@@ -21,6 +21,8 @@ class Summary extends Component
     public $stores = [];
     public $expenseBreakdown = [];
     public $expensesChart = [];
+    public $dailyBreakdown = [];
+    public $dailyChart = [];
 
     public function mount()
     {
@@ -72,6 +74,32 @@ class Summary extends Component
         $expensesMonth = (clone $expenseQuery)->where('r.reg_at', '>=', Carbon::now()->startOfMonth())->sum('r.amount_used');
         $expensesToday = (clone $expenseQuery)->where('r.reg_at', '>=', Carbon::today())->sum('r.amount_used');
 
+        // --- DAILY EXPENSES (running costs, not tied to an inventory) ---
+        $dailyQuery = DB::table('daily_expenses as d')
+            ->join('daily_expense_types as t', 't.id', '=', 'd.expense_type_id')
+            ->where('d.status', 'Active')
+            ->where('d.expense_date', '<=', Carbon::today()->toDateString());
+
+        if ($companyId != 1) {
+            $dailyQuery->where('d.company_id', $companyId);
+        }
+
+        if ($this->storeId !== 'all') {
+            $dailyQuery->where('d.store_id', $this->storeId);
+        }
+
+        $monthStart = Carbon::now()->startOfMonth()->toDateString();
+        $dailyToday = (clone $dailyQuery)->where('d.expense_date', Carbon::today()->toDateString())->sum('d.amount');
+        $dailyMonth = (clone $dailyQuery)->where('d.expense_date', '>=', $monthStart)->sum('d.amount');
+
+        $this->dailyBreakdown = (clone $dailyQuery)
+            ->where('d.expense_date', '>=', $monthStart)
+            ->groupBy('t.name')
+            ->orderByDesc('total')
+            ->get(['t.name as name', DB::raw('SUM(d.amount) as total'), DB::raw('COUNT(*) as entries')])
+            ->map(fn ($row) => ['name' => $row->name, 'total' => (float) $row->total, 'entries' => (int) $row->entries])
+            ->all();
+
         $this->expenseBreakdown = (clone $expenseQuery)
             ->groupBy('e.e_name')
             ->orderByDesc('total')
@@ -119,6 +147,9 @@ class Summary extends Component
             'expenses_to_date' => number_format($expensesToDate, 0, '.', ','),
             'expenses_month'   => number_format($expensesMonth, 0, '.', ','),
             'expenses_today'   => number_format($expensesToday, 0, '.', ','),
+            'daily_today'      => number_format($dailyToday, 0, '.', ','),
+            'daily_month'      => number_format($dailyMonth, 0, '.', ','),
+            'all_expenses_month' => number_format($expensesMonth + $dailyMonth, 0, '.', ','),
             'generated_amount' => number_format($invoiceTodayQuery->sum('total_invoice_amount'), 2, '.', ','),
             'paid_amount'      => number_format($sumToday, 2, '.', ','),
             'unpaid_amount'    => number_format($invoiceTodayQuery->sum('amount_remained'), 2, '.', ','),
@@ -174,8 +205,20 @@ class Summary extends Component
 
         $this->expensesChart = $expenseData;
 
+        $dailyRows = (clone $dailyQuery)
+            ->whereYear('d.expense_date', date('Y'))
+            ->groupBy(DB::raw('MONTH(d.expense_date)'))
+            ->get([DB::raw('MONTH(d.expense_date) as month'), DB::raw('SUM(d.amount) as amount')]);
+
+        $dailyData = [];
+        for ($month = 1; $month <= 12; $month++) {
+            $dailyData[] = (float) optional($dailyRows->firstWhere('month', $month))->amount;
+        }
+
+        $this->dailyChart = $dailyData;
+
         // Emit event to update chart
-        $this->emit('salesUpdated', $this->sales, $this->expensesChart);
+        $this->emit('salesUpdated', $this->sales, $this->expensesChart, $this->dailyChart);
     }
 
     public function render()
