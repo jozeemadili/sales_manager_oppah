@@ -443,7 +443,9 @@ document.addEventListener('livewire:load', function () {
     });
 
     window.addEventListener('open-summary-detail', () => {
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('summaryDetailModal')).show();
+        // This site ships Bootstrap 5.0.0-beta2, which has no getOrCreateInstance().
+        const el = document.getElementById('summaryDetailModal');
+        (bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el)).show();
     });
 
     Livewire.on('salesUpdated', (data) => {
