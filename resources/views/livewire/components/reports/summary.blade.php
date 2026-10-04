@@ -175,47 +175,10 @@
     </div>
 
 
-    @if(count($expenseBreakdown))
-    <div class="card">
-        <div class="card-header">
-            <h5>Inventory Expenses by Type (To Date)</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover mb-0">
-                    <thead>
-                        <tr>
-                            <th>Expense</th>
-                            <th class="text-end">Entries</th>
-                            <th class="text-end">Amount (TZS)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($expenseBreakdown as $row)
-                        <tr>
-                            <td>{{ strtoupper($row['name']) }}</td>
-                            <td class="text-end">{{ $row['entries'] }}</td>
-                            <td class="text-end">{{ number_format($row['total'], 0) }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr class="fw-bold">
-                            <td>Total</td>
-                            <td class="text-end">{{ collect($expenseBreakdown)->sum('entries') }}</td>
-                            <td class="text-end">{{ $summary['expenses_to_date'] }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-        </div>
-    </div>
-    @endif
-
     @if(count($dailyBreakdown))
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Daily Expenses by Type (This Month)</h5>
+            <h5 class="mb-0">Daily Expenses by Type (Today &mdash; {{ now()->format('d M Y') }})</h5>
             <a href="{{ route('daily-expenses') }}" class="btn btn-outline-primary btn-xs">Open Daily Expenses</a>
         </div>
         <div class="card-body p-0">
@@ -241,7 +204,7 @@
                         <tr class="fw-bold">
                             <td>Total</td>
                             <td class="text-end">{{ collect($dailyBreakdown)->sum('entries') }}</td>
-                            <td class="text-end">{{ $summary['daily_month'] }}</td>
+                            <td class="text-end">{{ $summary['daily_today'] }}</td>
                         </tr>
                     </tfoot>
                 </table>

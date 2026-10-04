@@ -18,7 +18,6 @@ class Summary extends Component
     public $summary = [];
     public $sales = [];
     public $storeId = 'all';
-    public $expenseBreakdown = [];
     public $expensesChart = [];
     public $dailyBreakdown = [];
     public $dailyChart = [];
@@ -111,20 +110,15 @@ class Summary extends Component
         $dailyToday = (clone $dailyQuery)->where('d.expense_date', Carbon::today()->toDateString())->sum('d.amount');
         $dailyMonth = (clone $dailyQuery)->where('d.expense_date', '>=', $monthStart)->sum('d.amount');
 
+        // Today only: the table empties itself when the day changes.
         $this->dailyBreakdown = (clone $dailyQuery)
-            ->where('d.expense_date', '>=', $monthStart)
+            ->where('d.expense_date', Carbon::today()->toDateString())
             ->groupBy('t.name')
             ->orderByDesc('total')
             ->get(['t.name as name', DB::raw('SUM(d.amount) as total'), DB::raw('COUNT(*) as entries')])
             ->map(fn ($row) => ['name' => $row->name, 'total' => (float) $row->total, 'entries' => (int) $row->entries])
             ->all();
 
-        $this->expenseBreakdown = (clone $expenseQuery)
-            ->groupBy('e.e_name')
-            ->orderByDesc('total')
-            ->get(['e.e_name as name', DB::raw('SUM(r.amount_used) as total'), DB::raw('COUNT(*) as entries')])
-            ->map(fn ($row) => ['name' => $row->name, 'total' => (float) $row->total, 'entries' => (int) $row->entries])
-            ->all();
 
         // --- CUSTOMERS ---
         $customerQuery = Customer::query();
