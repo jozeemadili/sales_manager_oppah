@@ -14,7 +14,8 @@
         .header td { vertical-align: middle; }
         .company-name { font-size: 15px; font-weight: bold; }
         .muted { color: #666; }
-        .qr-caption { font-size: 7.5px; color: #666; line-height: 1.2; }
+        .qr-block { margin-top: 22px; text-align: center; }
+        .qr-caption { font-size: 8px; color: #666; margin-top: 2px; }
         h1 { text-align: center; font-size: 15px; letter-spacing: 1px; margin: 16px 0 4px; color: {{ $color }}; }
         .subtitle { text-align: center; margin-bottom: 14px; }
         .parties { width: 100%; margin-bottom: 12px; }
@@ -46,12 +47,6 @@
                     <div class="muted">P.O.BOX {{ $company->postal_address }} @if($company->tin) | TIN: {{ $company->tin }} @endif</div>
                 @endif
             </td>
-            @isset($qrcode)
-            <td style="width: 135px; text-align: center;">
-                <img src="{{ $qrcode }}" style="width: 115px; height: 115px;">
-                <div class="qr-caption">Scan to view this statement<br>(valid until {{ $qrExpires->format('d M Y') }})</div>
-            </td>
-            @endisset
         </tr>
     </table>
 
@@ -121,6 +116,13 @@
         If you have already paid, please share the payment details so we can update your account.<br><br>
         <em>Tafadhali lipa kiasi kilichobaki cha <strong>{{ number_format($totals['balance'], 2) }} TZS</strong> mapema iwezekanavyo. Asante kwa ushirikiano wako.</em>
     </div>
+
+    @isset($qrcode)
+    <div class="qr-block">
+        <img src="{{ $qrcode }}" style="width: 115px; height: 115px;">
+        <div class="qr-caption">Scan to view this statement (valid until {{ $qrExpires->format('d M Y') }})</div>
+    </div>
+    @endisset
 
     <div class="footer">
         {{ optional($company)->name }} &middot; www.oppah01.co.tz &middot; Generated {{ $generatedAt->format('d M Y H:i') }}
