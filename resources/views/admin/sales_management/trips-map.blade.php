@@ -67,7 +67,7 @@ Trips Map
                               <td><a href="{{ route('route-preview', $loc->route_id) }}">{{ optional($loc->route)->trip_no }}</a></td>
                               <td>{{ $loc->eventLabel() }}</td>
                               <td>{{ optional($loc->user)->first_name }}</td>
-                              <td><span class="badge bg-warning text-dark">{{ $loc->status }}</span></td>
+                              <td><span class="badge bg-warning text-dark" title="{{ $loc->status }}">{{ $loc->reason() }}</span></td>
                           </tr>
                           @endforeach
                       </tbody>

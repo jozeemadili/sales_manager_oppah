@@ -345,7 +345,7 @@
                                         <a href="https://www.openstreetmap.org/?mlat={{ $loc->latitude }}&mlon={{ $loc->longitude }}#map=16/{{ $loc->latitude }}/{{ $loc->longitude }}" target="_blank">{{ $loc->latitude }}, {{ $loc->longitude }}</a>
                                         <small class="text-muted">(&plusmn;{{ $loc->accuracy_m }} m)</small>
                                     @else
-                                        <span class="badge bg-warning text-dark">No location ({{ $loc->status }})</span>
+                                        <span class="badge bg-warning text-dark" title="{{ $loc->status }}">No location: {{ $loc->reason() }}</span>
                                     @endif
                                 </td>
                             </tr>

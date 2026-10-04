@@ -25,6 +25,15 @@ class TripLocation extends Model
 
 	const STATUSES = ['ok', 'denied', 'unavailable', 'timeout', 'unsupported'];
 
+	// Why there is no position, in plain words (shown on the trip map pages).
+	const REASONS = [
+		'denied' => 'Driver refused location',
+		'unavailable' => 'Phone could not find location (GPS off?)',
+		'timeout' => 'Location took too long',
+		'unsupported' => 'Browser has no location support',
+		'not_sent' => 'No location sent (old page or script blocked)',
+	];
+
 	protected $casts = [
 		'route_id' => 'int',
 		'ref_id' => 'int',
@@ -53,6 +62,11 @@ class TripLocation extends Model
 		return $this->status === 'ok' && $this->latitude !== null && $this->longitude !== null;
 	}
 
+	public function reason()
+	{
+		return self::REASONS[$this->status] ?? $this->status;
+	}
+
 	public function eventLabel()
 	{
 		return self::EVENTS[$this->event] ?? $this->event;
@@ -68,7 +82,8 @@ class TripLocation extends Model
 			return null;
 		}
 
-		$status = in_array($request->input('geo_status'), self::STATUSES, true) ? $request->input('geo_status') : 'unavailable';
+		$sent = $request->input('geo_status');
+		$status = $sent === null ? 'not_sent' : (in_array($sent, self::STATUSES, true) ? $sent : 'unavailable');
 		$lat = $request->input('geo_lat');
 		$lng = $request->input('geo_lng');
 		$valid = $status === 'ok' && is_numeric($lat) && is_numeric($lng)
