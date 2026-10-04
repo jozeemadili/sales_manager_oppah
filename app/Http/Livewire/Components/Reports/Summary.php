@@ -28,6 +28,16 @@ class Summary extends Component
     public $balanceChart = [];
     public $chartTotals = [];
 
+    // Drill-down list behind the invoice cards
+    public $detailType = null;
+    public $detailTitle = '';
+    public $detailRows = [];
+    public $detailCount = 0;
+    public $detailTotal = 0;
+    public $detailByStatus = [];
+
+    const DETAIL_LIMIT = 500;
+
 
     public function mount()
     {
@@ -264,6 +274,79 @@ class Summary extends Component
             'inventory' => $this->expensesChart,
             'daily' => $this->dailyChart,
         ]);
+    }
+
+    /**
+     * List the invoices / payments behind one of the invoice cards.
+     * Uses the same scope as the cards: Mzinga store, user's company.
+     */
+    public function showDetail($type)
+    {
+        $this->useMainStore();
+        $companyId = Auth::user()->company_id;
+        $today = [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()];
+
+        if ($type === 'paid_today') {
+            $query = InvoicePaymentDetail::with('invoice.customer')
+                ->whereDate('date_payed', Carbon::today())
+                ->when($this->storeId !== 'all', fn ($q) => $q->whereHas('invoice.customer', fn ($c) => $c->where('store_id', $this->storeId)));
+
+            $this->detailTitle = 'Payments Received Today';
+            $this->detailCount = (clone $query)->count();
+            $this->detailTotal = (float) (clone $query)->sum('amount_submitted');
+            $this->detailByStatus = [];
+            $this->detailRows = $query->orderByDesc('date_payed')->limit(self::DETAIL_LIMIT)->get()
+                ->map(fn ($p) => [
+                    'receipt' => $p->receipt_number,
+                    'invoice_id' => $p->invoice_no,
+                    'customer' => optional(optional($p->invoice)->customer)->name,
+                    'amount' => (float) $p->amount_submitted,
+                    'time' => Carbon::parse($p->date_payed)->format('H:i'),
+                    'by' => $p->payer_id,
+                    'channel' => $p->channel,
+                ])->all();
+        } else {
+            $query = Invoice::with('customer')
+                ->when($companyId != 1, fn ($q) => $q->where('company_id', $companyId))
+                ->when($this->storeId !== 'all', fn ($q) => $q->whereHas('customer', fn (Builder $c) => $c->where('store_id', $this->storeId)));
+
+            if ($type === 'unpaid_all') {
+                $query->where('amount_remained', '>', 0);
+                $this->detailTitle = 'Unpaid Invoices (All Time)';
+                $sumColumn = 'amount_remained';
+            } elseif ($type === 'unpaid_today') {
+                $query->whereBetween('invoice_date', $today)->where('amount_remained', '>', 0);
+                $this->detailTitle = 'Unpaid Invoices (Today)';
+                $sumColumn = 'amount_remained';
+            } else {
+                $type = 'generated_today';
+                $query->whereBetween('invoice_date', $today);
+                $this->detailTitle = 'Invoices Generated Today';
+                $sumColumn = 'total_invoice_amount';
+            }
+
+            $this->detailCount = (clone $query)->count();
+            $this->detailTotal = (float) (clone $query)->sum($sumColumn);
+            $this->detailByStatus = (clone $query)->toBase()
+                ->groupBy('status')
+                ->get(['status', DB::raw('COUNT(*) as n'), DB::raw("SUM($sumColumn) as amount")])
+                ->map(fn ($r) => ['status' => $r->status, 'n' => (int) $r->n, 'amount' => (float) $r->amount])
+                ->sortByDesc('amount')->values()->all();
+            $this->detailRows = $query->orderBy('invoice_date')->limit(self::DETAIL_LIMIT)->get()
+                ->map(fn ($i) => [
+                    'id' => $i->id,
+                    'date' => optional($i->invoice_date)->format('d/m/Y H:i'),
+                    'age' => $i->invoice_date ? Carbon::parse($i->invoice_date)->startOfDay()->diffInDays(Carbon::today()) : null,
+                    'customer' => optional($i->customer)->name,
+                    'status' => $i->status,
+                    'total' => (float) $i->total_invoice_amount,
+                    'paid' => (float) $i->amount_paid,
+                    'remained' => (float) $i->amount_remained,
+                ])->all();
+        }
+
+        $this->detailType = $type;
+        $this->dispatchBrowserEvent('open-summary-detail');
     }
 
     public function render()
