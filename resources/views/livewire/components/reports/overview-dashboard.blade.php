@@ -357,8 +357,20 @@
             });
         }
 
-        document.addEventListener('livewire:load', renderOverviewCharts);
-        Livewire.hook('message.processed', renderOverviewCharts);
+        // This script is pushed above @livewireScripts, so wait for the DOM
+        // (and Livewire) before rendering or touching the Livewire global.
+        function bootOverviewCharts() {
+            renderOverviewCharts();
+            if (window.Livewire) {
+                Livewire.hook('message.processed', renderOverviewCharts);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootOverviewCharts);
+        } else {
+            bootOverviewCharts();
+        }
     })();
 </script>
 @endpush
