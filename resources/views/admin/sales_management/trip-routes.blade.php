@@ -147,7 +147,7 @@
             </div>
 
             <div class="modal-body">
-                <form method="POST" action="{{ route('add-truck-route') }}">
+                <form method="POST" action="{{ route('add-truck-route') }}" data-geo-event="trip_created">
                     @csrf
                     <div class="row">
                         <div class="col-md-4">
@@ -265,6 +265,7 @@
 
 
   @push('scripts')
+  @include('admin.sales_management.partials.geo-capture')
   <script src="{{ asset('assets/js/datepicker/date-picker/datepicker.js') }}"></script>
   <script src="{{ asset('assets/js/datepicker/date-picker/datepicker.en.js') }}"></script>
   <script src="{{ asset('assets/js/datepicker/date-picker/datepicker.custom.js') }}"></script>

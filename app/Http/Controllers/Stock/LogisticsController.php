@@ -12,6 +12,7 @@ use App\Models\ExpensesRecordsTruck;
 use App\Models\RoutePlan;
 use App\Models\BankDeposist;
 use App\Models\BankDepositFile;
+use App\Models\TripLocation;
 
 
 
@@ -264,6 +265,7 @@ class LogisticsController extends Controller
         ]);
     
         // return redirect()->back()->with('success', 'Truck route added successfully! Trip No: ' . $trip_no);
+        TripLocation::fromRequest($request, $route->id, 'trip_created', $route->id);
         return redirect()->route('route-preview', ['id' => $route->id])->with('success', 'Truck route saved successfully!');
     }
     public function saveTruck(Request $request)
@@ -405,6 +407,7 @@ class LogisticsController extends Controller
                 'route_id'          => $request->inventory_id,
                 
             ]);
+            TripLocation::fromRequest($request, $request->inventory_id, 'expense', $user->id);
             return redirect()->back()->with('success', 'Expenses Recorded  successful.');    
 
         }
@@ -446,6 +449,7 @@ class LogisticsController extends Controller
                 'created_by'     => intval(Auth::user()->id),
             ]);
         
+            TripLocation::fromRequest($request, $request->inventory_id, 'route_plan', $routePlan->id);
             return redirect()->back()->with('success', 'Route Plan recorded successfully!');
         }
 

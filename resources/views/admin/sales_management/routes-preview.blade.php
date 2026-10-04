@@ -2,6 +2,7 @@
 
 @section('title')
 {{ ucfirst(str_replace('-', ' ', Route::currentRouteName())) }}
+
 @endsection
 
 @push('css')
@@ -37,7 +38,7 @@
     @slot('breadcrumb_action_buttons')
 
     @if($TrucksRoute->status == 'Pending')
-    <li><a href='{!! Route('send-approve', ['id' => $TrucksRoute->id]) !!}' class='btn btn-outline-primary'>Send To Stock</a> </li>
+    <li><a href='{!! Route('send-approve', ['id' => $TrucksRoute->id]) !!}' class='btn btn-outline-primary' data-geo-link data-geo-url="{{ route('trip-location-store', $TrucksRoute->id) }}">Send To Stock</a> </li>
 
    
     <li>
@@ -198,6 +199,9 @@
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="expense-tab" data-bs-toggle="tab" data-bs-target="#expenses" type="button" role="tab">Expenses</button>
                 </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="map-tab" data-bs-toggle="tab" data-bs-target="#tripMap" type="button" role="tab">&#128205; Map</button>
+                </li>
             </ul>
         </div>
 
@@ -316,6 +320,42 @@
                     </table>
                 </div>
             </div>
+        {{-- MAP TAB: where the driver was when each entry was saved --}}
+            @php
+                $tripLocations = \App\Models\TripLocation::with('user')->where('route_id', $TrucksRoute->id)->orderBy('created_at')->get();
+                $tripPoints = $tripLocations->filter->hasPosition()->map(fn ($l) => ['lat' => $l->latitude, 'lng' => $l->longitude, 'accuracy' => $l->accuracy_m, 'event' => $l->eventLabel(), 'by' => optional($l->user)->first_name, 'time' => $l->created_at->format('d M Y H:i')])->values();
+            @endphp
+            <div class="tab-pane fade" id="tripMap" role="tabpanel">
+                @if($tripPoints->count())
+                    <div id="tripMapCanvas" style="height: 420px; border-radius: 6px;"></div>
+                @else
+                    <div class="alert alert-light border">No location recorded for this trip yet.</div>
+                @endif
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm">
+                        <thead><tr><th>Time</th><th>Action</th><th>By</th><th>Location</th></tr></thead>
+                        <tbody>
+                            @forelse($tripLocations as $loc)
+                            <tr>
+                                <td>{{ $loc->created_at->format('d M Y H:i') }}</td>
+                                <td>{{ $loc->eventLabel() }}</td>
+                                <td>{{ optional($loc->user)->first_name }}</td>
+                                <td>
+                                    @if($loc->hasPosition())
+                                        <a href="https://www.openstreetmap.org/?mlat={{ $loc->latitude }}&mlon={{ $loc->longitude }}#map=16/{{ $loc->latitude }}/{{ $loc->longitude }}" target="_blank">{{ $loc->latitude }}, {{ $loc->longitude }}</a>
+                                        <small class="text-muted">(&plusmn;{{ $loc->accuracy_m }} m)</small>
+                                    @else
+                                        <span class="badge bg-warning text-dark">No location ({{ $loc->status }})</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="4" class="text-center text-muted">Nothing recorded yet.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -323,6 +363,30 @@
 {{-- =============== MODALS =============== --}}
 
 
+@include('admin.sales_management.partials.geo-capture')
+@if($tripPoints->count())
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+(function () {
+    var points = @json($tripPoints);
+    var map = null;
+    function draw() {
+        if (map) { map.invalidateSize(); return; }
+        map = L.map('tripMapCanvas');
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+        var latlngs = points.map(function (p, i) {
+            L.marker([p.lat, p.lng]).addTo(map).bindPopup('<b>' + (i + 1) + '. ' + p.event + '</b><br>' + p.time + '<br>' + (p.by || '') + '<br>&plusmn;' + p.accuracy + ' m');
+            return [p.lat, p.lng];
+        });
+        if (latlngs.length > 1) { L.polyline(latlngs, { color: '#1565c0', weight: 3, opacity: 0.7 }).addTo(map); }
+        map.fitBounds(L.latLngBounds(latlngs).pad(0.3), { maxZoom: 15 });
+    }
+    // The map lives in a hidden tab: draw it the first time the tab is shown.
+    document.getElementById('map-tab').addEventListener('shown.bs.tab', draw);
+})();
+</script>
+@endif
 @endsection
 
     <!-- NEW MODAL START -->
@@ -334,7 +398,7 @@
                     <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Close" ></button>
                 </div>
                 <div class="modal-body">
-                    <form method="post" action="{{ Route('record-expense-truck') }}">
+                    <form method="post" action="{{ Route('record-expense-truck') }}" data-geo-event="expense">
                         @csrf
                         <div class="row">
                         <div class="col-lg-6">
@@ -392,7 +456,7 @@
                 </div>
     
                 <div class="modal-body">
-                    <form method="post" action="{{ Route('record-route-plan') }}">
+                    <form method="post" action="{{ Route('record-route-plan') }}" data-geo-event="route_plan">
                         @csrf
                         <div class="row">
                             <!-- FROM -->

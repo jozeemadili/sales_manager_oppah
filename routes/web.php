@@ -20,6 +20,7 @@ use App\Http\Controllers\Stock\DailyExpensesController;
 use App\Http\Controllers\Stock\CustomerStatementController;
 use App\Http\Controllers\Stock\BankDepositSlipController;
 use App\Http\Controllers\Stock\DayClosureController;
+use App\Http\Controllers\Stock\TripLocationController;
 use App\Http\Controllers\Tuli\TuliStoresController;
 use App\Http\Controllers\Tuli\inventoryManagentController;
 use App\Http\Controllers\Tuli\CategoriesController as TuliCategoriesController;
@@ -203,6 +204,8 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
     
 
     Route::get('route/preview/{id}',[LogisticsController::class, 'RoutePreview'])->name('route-preview');
+    Route::post('trips/{id}/location', [TripLocationController::class, 'store'])->name('trip-location-store');
+    Route::get('trips/map', [TripLocationController::class, 'map'])->name('trips-map');
 
     
     //customer managemnt

@@ -164,6 +164,7 @@
                         <li><a href="{{route('truck-drivers')}}" class="{{routeActive('truck-drivers')}}">  - Trucks & Drivers</a></li>
                        
                         <li><a href="{{route('trips-management')}}" class="{{routeActive('trips-management')}}">  - Trips</a></li>
+                        <li><a href="{{route('trips-map')}}" class="{{routeActive('trips-map')}}">  - Trips Map</a></li>
                         <li><a href="{{route('truck-reports')}}" class="{{routeActive('truck-reports')}}">  - Truck Reports</a></li>
                         <li><a href="{{route('truck-ejy')}}" class="{{routeActive('truck-ejy')}}">  - Report for T821EJY</a></li>
                         <li><a href="{{route('truck-erw')}}" class="{{routeActive('truck-erw')}}">  - Report for T343ERW</a></li>
