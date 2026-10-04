@@ -541,6 +541,11 @@
                 <div class="modal-body">
                     @if($endDayPreview)
                     @php $p = $endDayPreview; $f = fn ($v) => number_format((float) $v, 2); @endphp
+                    @if(!empty($p['ledger']))
+                    <div class="border rounded p-2 mb-3">
+                        @include('admin.sales_management.partials.timber-ledger', ['ledger' => $p['ledger'], 'ledgerDate' => $p['business_date'], 'tableClass' => 'table table-sm table-bordered mb-0', 'closedBy' => Auth::user()->first_name])
+                    </div>
+                    @endif
                     <table class="table table-sm table-bordered">
                         <tr><th>Stock Value (Selling Price)</th><td class="text-end">{{ $f($p['stock_selling']) }}</td><th>Stock Value (Cost Price)</th><td class="text-end">{{ $f($p['stock_cost']) }}</td></tr>
                         <tr><th>Total Generated (Today)</th><td class="text-end">{{ $f($p['generated_today']) }} <small class="text-muted">({{ $p['lists']['generated_today']['count'] }})</small></td><th>Total Paid (Today)</th><td class="text-end">{{ $f($p['paid_today']) }} <small class="text-muted">({{ $p['lists']['paid_today']['count'] }})</small></td></tr>
@@ -676,6 +681,8 @@
 @push('css')
 <style>
 #container_sales { height: 460px; }
+.timber-ledger .num { text-align: right; white-space: nowrap; }
+.timber-ledger th { font-size: 12px; }
 .end-day-section { border: 1px solid #e5e5e5; border-radius: 6px; padding: 6px 10px; margin-top: 10px; }
 .end-day-section summary { cursor: pointer; font-weight: 600; }
 .summary-clickable { cursor: pointer; transition: transform .15s, box-shadow .15s; }

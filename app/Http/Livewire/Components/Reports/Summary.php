@@ -371,6 +371,21 @@ class Summary extends Component
             ])->all();
 
         $num = fn ($v) => (float) str_replace(',', '', $v);
+        $ledger = $this->timberLedger();
+
+        // Bottom part of the paper ledger.
+        $paidToday = $num($this->summary['paid_amount']);
+        $ledger['summary'] = [
+            'mauzo' => $ledger['totals']['sales_total'],
+            'matumizi_ndani' => $num($this->summary['daily_today']),
+            'matumizi_nje' => $num($this->summary['expenses_today']),
+            'matumizi_jumla' => $num($this->summary['daily_today']) + $num($this->summary['expenses_today']),
+            'madeni_yaliyolipwa' => max(0, $paidToday - $ledger['quick_sales_total']),
+            'madeni_yasiyolipwa' => $num($this->summary['unpaid_amount']),
+            'kilichobaki' => (float) $this->summary['balance_today_raw'],
+            'bank_jumla' => $num($this->summary['deposited_today']),
+            'bank_accounts' => collect($deposits)->map(fn ($d) => trim($d['account'].' ('.strtoupper($d['bank']).')'))->unique()->values()->all(),
+        ];
 
         return [
             'store' => $this->chartStoreName,
@@ -388,9 +403,93 @@ class Summary extends Component
             'deposited_today' => $num($this->summary['deposited_today']),
             'left_to_deposit' => (float) $this->summary['to_deposit_raw'],
             'lists' => $lists,
+            'ledger' => $ledger,
             'daily_by_type' => $this->dailyBreakdown,
             'daily_entries' => $dailyEntries,
             'deposits' => $deposits,
+        ];
+    }
+
+    /**
+     * Timber Control Ledger (the paper "Timber Control Ledger" form), one row
+     * per timber type (product name) for the main store, for today:
+     *  - Zilizouzwa: pieces sold today (confirmed invoices + quick sales)
+     *  - Zilizobaki: pieces in stock now
+     *  - Zilizosalia: opening = sold + remaining (as on the paper form)
+     *  - Jumla ya bei: sold x cost price, and the actual sales amount
+     */
+    private function timberLedger()
+    {
+        $today = [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()];
+        $companyId = Auth::user()->company_id;
+        $key = fn ($name) => strtoupper(preg_replace('/\s+/', ' ', trim($name)));
+        $rows = [];
+        $row = function ($name) use (&$rows, $key) {
+            $k = $key($name);
+            return $rows[$k] ??= ['type' => $k, 'sold' => 0, 'remaining' => 0, 'cost_total' => 0, 'sales_total' => 0, 'unit_cost' => 0, 'unit_price' => 0];
+        };
+
+        // Stock now, with the latest prices as the per-piece fallback.
+        $stock = Product::where('status', 'Active')
+            ->where('store_id', $this->storeId)
+            ->when($companyId != 1, fn ($q) => $q->where('company_id', $companyId))
+            ->orderBy('id')
+            ->get(['product_name', 'qty_remained', 'purchasing_price', 'selling_price']);
+
+        foreach ($stock as $p) {
+            $r = $row($p->product_name);
+            $r['remaining'] += (float) $p->qty_remained;
+            $r['unit_cost'] = (float) $p->purchasing_price ?: $r['unit_cost'];
+            $r['unit_price'] = (float) $p->selling_price ?: $r['unit_price'];
+            $rows[$r['type']] = $r;
+        }
+
+        // Sold today on confirmed invoices (confirming sets invoice_date and deducts stock).
+        $invoiceSold = DB::table('invoice_items as it')
+            ->join('invoices as i', 'i.id', '=', 'it.invoice_id')
+            ->join('products as p', 'p.id', '=', 'it.product_id')
+            ->whereIn('i.status', ['Confirmed', 'Partial_Paid', 'Paid'])
+            ->whereBetween('i.invoice_date', $today)
+            ->where('p.store_id', $this->storeId)
+            ->get(['p.product_name', 'it.qty', 'it.price', 'p.purchasing_price']);
+
+        $quickSold = $this->quickSales()
+            ->whereBetween('s.date_sold', $today)
+            ->get(['p.product_name', 's.quantity as qty', 's.selling_price as price', 'p.purchasing_price']);
+
+        foreach ($invoiceSold->concat($quickSold) as $line) {
+            $r = $row($line->product_name);
+            $r['sold'] += (float) $line->qty;
+            $r['cost_total'] += (float) $line->qty * (float) $line->purchasing_price;
+            $r['sales_total'] += (float) $line->qty * (float) $line->price;
+            $rows[$r['type']] = $r;
+        }
+
+        $rows = collect($rows)
+            ->filter(fn ($r) => $r['sold'] > 0 || $r['remaining'] > 0)
+            ->map(function ($r) {
+                $r['opening'] = $r['sold'] + $r['remaining'];
+                if ($r['sold'] > 0) {
+                    $r['unit_cost'] = $r['cost_total'] / $r['sold'] ?: $r['unit_cost'];
+                    $r['unit_price'] = $r['sales_total'] / $r['sold'];
+                }
+                return $r;
+            })
+            ->sortBy('type', SORT_NATURAL)
+            ->values()->all();
+
+        $sum = fn ($col) => array_sum(array_column($rows, $col));
+
+        return [
+            'rows' => $rows,
+            'totals' => [
+                'opening' => $sum('opening'),
+                'sold' => $sum('sold'),
+                'remaining' => $sum('remaining'),
+                'cost_total' => $sum('cost_total'),
+                'sales_total' => $sum('sales_total'),
+            ],
+            'quick_sales_total' => (float) $quickSold->sum(fn ($l) => $l->qty * $l->price),
         ];
     }
 

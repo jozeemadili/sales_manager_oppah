@@ -22,6 +22,9 @@
         table.t { width: 100%; border-collapse: collapse; }
         table.t th { background: {{ $color }}; color: #fff; padding: 4px 5px; font-weight: normal; text-align: left; }
         table.t td { padding: 4px 5px; border-bottom: 1px solid #e3e3e3; }
+        table.t th { text-align: left; }
+        table.t th[colspan] { text-align: center; }
+        table.ledger-summary td { padding: 3px 5px; }
         table.t tfoot td { font-weight: bold; border-top: 1.5px solid #999; border-bottom: none; }
         .num, table.t th.num { text-align: right; white-space: nowrap; }
         table.kpi { width: 100%; border-collapse: collapse; }
@@ -60,6 +63,11 @@
             <br><span class="warn">Re-opened by {{ optional($closure->reopener)->first_name }} at {{ optional($closure->reopened_at)->format('d M Y H:i') }}</span>
         @endif
     </div>
+
+    @if(!empty($s['ledger']))
+    <h2>Timber Control Ledger</h2>
+    @include('admin.sales_management.partials.timber-ledger', ['ledger' => $s['ledger'], 'ledgerDate' => $s['business_date'], 'tableClass' => 't', 'closedBy' => optional($closure->closer)->first_name])
+    @endif
 
     <h2>Summary</h2>
     <table class="kpi">
