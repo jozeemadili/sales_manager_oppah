@@ -190,11 +190,16 @@
 
     <!-- Sales vs Expenses Chart -->
     <div class="card">
-        <div class="card-header">
-            <h5>Payment Trends</h5>
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="mb-0">Payment Trends &mdash; {{ strtoupper($chartStoreName) }}</h5>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Chart period">
+                <button type="button" wire:click="$set('chartPeriod', 'week')" class="btn {{ $chartPeriod === 'week' ? 'btn-primary' : 'btn-outline-primary' }}">Week</button>
+                <button type="button" wire:click="$set('chartPeriod', 'month')" class="btn {{ $chartPeriod === 'month' ? 'btn-primary' : 'btn-outline-primary' }}">Month</button>
+                <button type="button" wire:click="$set('chartPeriod', 'year')" class="btn {{ $chartPeriod === 'year' ? 'btn-primary' : 'btn-outline-primary' }}">Year</button>
+            </div>
         </div>
         <div class="card-body p-0">
-            <figure class="highcharts-figure">
+            <figure class="highcharts-figure" wire:ignore>
                 <div id="container_sales"></div>
             </figure>
         </div>
@@ -303,37 +308,28 @@
 
 <script>
 document.addEventListener('livewire:load', function () {
-    let salesData = @json($sales);
-    let expensesData = @json($expensesChart);
-    let dailyData = @json($dailyChart);
-
-    function renderChart() {
-        Highcharts.chart('container_sales', {
-            chart: { type: 'column', options3d: { enabled: true, alpha: 10, beta: 25, depth: 70 } },
-            title: { text: '', align: 'left' },
-            plotOptions: { column: { depth: 25 } },
-            xAxis: { categories: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], labels: { skew3d: true, style: { fontSize: '16px' } } },
-            yAxis: { title: { text: 'TZS', margin: 20 } },
-            tooltip: { valueSuffix: ' TZS', shared: true },
-            series: [
-                { name: 'Total Sales', data: salesData },
-                { name: 'Inventory Expenses', data: expensesData, color: '#e74c3c' },
-                { name: 'Daily Expenses', data: dailyData, color: '#f39c12' }
-            ]
-        });
-    }
-
-    renderChart();
-
-    // Fresh data arrives with each update (e.g. changing the store).
-    Livewire.on('salesUpdated', (sales, expenses, daily) => {
-        salesData = sales;
-        expensesData = expenses;
-        dailyData = daily;
-        setTimeout(renderChart, 0); // after Livewire has finished patching the DOM
+    // The chart container is wire:ignore'd: build the chart once and update it in place.
+    const chart = Highcharts.chart('container_sales', {
+        chart: { type: 'column', options3d: { enabled: true, alpha: 10, beta: 25, depth: 70 } },
+        title: { text: '', align: 'left' },
+        plotOptions: { column: { depth: 25 } },
+        xAxis: { categories: @json($chartCategories), labels: { skew3d: true, style: { fontSize: '13px' } } },
+        yAxis: { title: { text: 'TZS', margin: 20 } },
+        tooltip: { valueSuffix: ' TZS', shared: true },
+        series: [
+            { name: 'Total Sales', data: @json($sales) },
+            { name: 'Inventory Expenses', data: @json($expensesChart), color: '#e74c3c' },
+            { name: 'Daily Expenses', data: @json($dailyChart), color: '#f39c12' }
+        ]
     });
 
-    Livewire.hook('message.processed', () => { renderChart(); });
+    Livewire.on('salesUpdated', (data) => {
+        chart.xAxis[0].setCategories(data.categories, false);
+        chart.series[0].setData(data.sales, false);
+        chart.series[1].setData(data.inventory, false);
+        chart.series[2].setData(data.daily, false);
+        chart.redraw();
+    });
 });
 </script>
 @endpush

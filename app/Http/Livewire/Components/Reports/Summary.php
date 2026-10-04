@@ -23,6 +23,12 @@ class Summary extends Component
     public $expensesChart = [];
     public $dailyBreakdown = [];
     public $dailyChart = [];
+    public $chartPeriod = 'year';
+    public $chartCategories = [];
+    public $chartStoreName = '';
+
+    // Payment Trends always shows this store (matched by name).
+    const CHART_STORE_NAME = 'MZINGA';
 
     public function mount()
     {
@@ -163,62 +169,85 @@ class Summary extends Component
             'inactive_customers'=> number_format($customerQuery->where('status','Inactive')->count(), 0, '.', ','),
         ];
 
-        // --- SALES CHART DATA ---
-        $invoiceSalesQuery = Invoice::select(
-                DB::raw('MONTH(invoice_date) as month'),
-                DB::raw('SUM(amount_paid) as amount')
-            )
-            ->whereYear('invoice_date', date('Y'));
+        $this->loadChart();
+    }
 
-        if ($companyId != 1) {
-            $invoiceSalesQuery->where('company_id', $companyId);
+    public function updatedChartPeriod()
+    {
+        if (!in_array($this->chartPeriod, ['week', 'month', 'year'])) {
+            $this->chartPeriod = 'year';
         }
 
-        if ($this->storeId !== 'all') {
-            $invoiceSalesQuery->whereHas('customer', function (Builder $q) {
-                $q->where('store_id', $this->storeId);
-            });
+        $this->loadChart();
+    }
+
+    /**
+     * Payment Trends: sales vs inventory expenses vs daily expenses.
+     * Always scoped to the Mzinga store (independent of the store dropdown),
+     * grouped per day for week/month and per month for year.
+     */
+    private function loadChart()
+    {
+        $companyId = Auth::user()->company_id;
+        $store = Store::where('name', 'like', '%'.self::CHART_STORE_NAME.'%')->first();
+        $storeId = optional($store)->id;
+        $this->chartStoreName = $store ? $store->name : 'All Stores';
+
+        if ($this->chartPeriod === 'year') {
+            $start = Carbon::now()->startOfYear();
+            $end = Carbon::now()->endOfYear();
+            $bucketSql = fn ($col) => "MONTH($col)";
+            $keys = range(1, 12);
+            $this->chartCategories = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        } else {
+            $start = $this->chartPeriod === 'week' ? Carbon::today()->subDays(6) : Carbon::now()->startOfMonth();
+            $end = $this->chartPeriod === 'week' ? Carbon::today()->endOfDay() : Carbon::now()->endOfMonth();
+            $bucketSql = fn ($col) => "DATE($col)";
+            $keys = [];
+            $this->chartCategories = [];
+            for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
+                $keys[] = $day->toDateString();
+                $this->chartCategories[] = $this->chartPeriod === 'week' ? $day->format('D d') : $day->format('d');
+            }
         }
 
-        $dbData = $invoiceSalesQuery->groupBy(DB::raw('MONTH(invoice_date)'))
-            ->orderBy(DB::raw('MONTH(invoice_date)'))
-            ->get();
+        $series = function ($query, $col, $sumCol) use ($bucketSql, $keys, $start, $end) {
+            $rows = $query->whereBetween($col, [$start->toDateTimeString(), $end->toDateTimeString()])
+                ->groupBy(DB::raw($bucketSql($col)))
+                ->get([DB::raw($bucketSql($col).' as bucket'), DB::raw("SUM($sumCol) as amount")])
+                ->pluck('amount', 'bucket');
 
-        $salesData = [];
-        for ($month = 1; $month <= 12; $month++) {
-            $monthData = $dbData->where('month', $month)->pluck('amount');
-            $salesData[] = $monthData->isNotEmpty() ? (float)$monthData->first() : 0;
-        }
+            return array_map(fn ($key) => (float) ($rows[$key] ?? 0), $keys);
+        };
 
-        $this->sales = $salesData;
+        $sales = Invoice::query()
+            ->when($companyId != 1, fn ($q) => $q->where('company_id', $companyId))
+            ->when($storeId, fn ($q) => $q->whereHas('customer', fn (Builder $c) => $c->where('store_id', $storeId)))
+            ->toBase();
 
-        // --- EXPENSES CHART DATA (same scope as the expense cards) ---
-        $expenseRows = (clone $expenseQuery)
-            ->whereYear('r.reg_at', date('Y'))
-            ->groupBy(DB::raw('MONTH(r.reg_at)'))
-            ->get([DB::raw('MONTH(r.reg_at) as month'), DB::raw('SUM(r.amount_used) as amount')]);
+        $inventoryExpenses = DB::table('expenses_records as r')
+            ->join('expenses as e', 'e.id', '=', 'r.expense_id')
+            ->join('inventories as i', 'i.id', '=', 'r.inventory_id')
+            ->where('r.status', 'Active')
+            ->where('e.to_be_used', 'MBAO')
+            ->when($companyId != 1, fn ($q) => $q->where('r.company_id', $companyId))
+            ->when($storeId, fn ($q) => $q->where('i.store_id', $storeId));
 
-        $expenseData = [];
-        for ($month = 1; $month <= 12; $month++) {
-            $expenseData[] = (float) optional($expenseRows->firstWhere('month', $month))->amount;
-        }
+        $dailyExpenses = DB::table('daily_expenses as d')
+            ->where('d.status', 'Active')
+            ->when($companyId != 1, fn ($q) => $q->where('d.company_id', $companyId))
+            ->when($storeId, fn ($q) => $q->where('d.store_id', $storeId));
 
-        $this->expensesChart = $expenseData;
+        $this->sales = $series($sales, 'invoice_date', 'amount_paid');
+        $this->expensesChart = $series($inventoryExpenses, 'r.reg_at', 'r.amount_used');
+        $this->dailyChart = $series($dailyExpenses, 'd.expense_date', 'd.amount');
 
-        $dailyRows = (clone $dailyQuery)
-            ->whereYear('d.expense_date', date('Y'))
-            ->groupBy(DB::raw('MONTH(d.expense_date)'))
-            ->get([DB::raw('MONTH(d.expense_date) as month'), DB::raw('SUM(d.amount) as amount')]);
-
-        $dailyData = [];
-        for ($month = 1; $month <= 12; $month++) {
-            $dailyData[] = (float) optional($dailyRows->firstWhere('month', $month))->amount;
-        }
-
-        $this->dailyChart = $dailyData;
-
-        // Emit event to update chart
-        $this->emit('salesUpdated', $this->sales, $this->expensesChart, $this->dailyChart);
+        $this->emit('salesUpdated', [
+            'categories' => $this->chartCategories,
+            'sales' => $this->sales,
+            'inventory' => $this->expensesChart,
+            'daily' => $this->dailyChart,
+        ]);
     }
 
     public function render()

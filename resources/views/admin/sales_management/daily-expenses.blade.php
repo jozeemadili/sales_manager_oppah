@@ -3,6 +3,13 @@
 Daily Expenses
 @endsection
 
+@push('css')
+<style>
+    .day-card { transition: box-shadow .15s, transform .15s; cursor: pointer; }
+    .day-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); transform: translateY(-2px); }
+</style>
+@endpush
+
 @section('content')
   @component('components.breadcrumb')
     @slot('breadcrumb_title')
@@ -68,6 +75,27 @@ Daily Expenses
                         <strong class="fs-5">{{ number_format($total, 0) }} TZS</strong>
                     </div>
 
+                    <!-- Daily totals: click a card to see that day's entries -->
+                    @if($days->count())
+                    <h6 class="mb-2">Total per Day <small class="text-muted">(click a day to see its expenses)</small></h6>
+                    <div class="row g-2 mb-4">
+                        @foreach($days as $date => $entries)
+                        <div class="col-6 col-md-4 col-lg-2">
+                            <a href="javascript:void(0)" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#dayModal{{ str_replace('-', '', $date) }}">
+                                <div class="card border mb-0 h-100 day-card {{ $date === now()->toDateString() ? 'border-primary' : '' }}">
+                                    <div class="card-body p-2 text-center">
+                                        <div class="small text-muted">{{ \Carbon\Carbon::parse($date)->format('D, d M Y') }}</div>
+                                        <div class="fw-bold fs-6 text-dark">{{ number_format($entries->sum('amount'), 0) }}</div>
+                                        <div class="small text-muted">{{ $entries->count() }} {{ \Illuminate\Support\Str::plural('entry', $entries->count()) }}</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+
+                    <h6 class="mb-2">All Entries</h6>
                     <div class="table-responsive">
                         @if($expenses->count())
                         <table class="table table-xs table-hover align-middle">
@@ -163,6 +191,58 @@ Daily Expenses
         </div>
     </div>
     @endif
+  @endforeach
+
+  <!-- DAY DETAIL MODALS -->
+  @foreach($days as $date => $entries)
+  <div class="modal fade" id="dayModal{{ str_replace('-', '', $date) }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Expenses for {{ \Carbon\Carbon::parse($date)->format('l, d M Y') }}</h5>
+                <button class="btn-close btn-close-white" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Expense</th>
+                                <th>Store</th>
+                                <th>Description</th>
+                                <th class="text-end">Amount (TZS)</th>
+                                <th>Recorded By</th>
+                                <th>Time Recorded</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($entries as $entry)
+                            <tr>
+                                <td>{{ strtoupper(optional($entry->type)->name) }}</td>
+                                <td><small>{{ strtoupper(optional($entry->store)->name) }}</small></td>
+                                <td><small>{{ $entry->description }}</small></td>
+                                <td class="text-end">{{ number_format($entry->amount, 0) }}</td>
+                                <td>{{ optional($entry->user)->first_name }}</td>
+                                <td><small>{{ \Carbon\Carbon::parse($entry->created_at)->format('d/m/Y H:i') }}</small></td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-bold">
+                                <td colspan="3">Total</td>
+                                <td class="text-end">{{ number_format($entries->sum('amount'), 0) }}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+  </div>
   @endforeach
 
   <!-- EXPENSE TYPES MODAL -->

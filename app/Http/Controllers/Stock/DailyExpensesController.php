@@ -40,10 +40,19 @@ class DailyExpensesController extends Controller
             ->when($storeId !== 'all', fn ($q) => $q->where('store_id', $storeId));
 
         $total = (clone $query)->sum('amount');
+
+        // One card per day in the period; clicking a card lists that day's entries.
+        $days = (clone $query)
+            ->orderByDesc('expense_date')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy(fn ($expense) => $expense->expense_date->toDateString());
+
         $expenses = $query->orderByDesc('expense_date')->orderByDesc('id')->paginate(20)->withQueryString();
 
         return view('admin.sales_management.daily-expenses', [
             'expenses' => $expenses,
+            'days' => $days,
             'total' => $total,
             'types' => DailyExpenseType::where('company_id', $user->company_id)->where('status', 'Active')->orderBy('name')->get(),
             'stores' => Store::where('company_id', $user->company_id)->where('status', 'Active')->orderBy('name')->get(),
