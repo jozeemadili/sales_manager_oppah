@@ -71,7 +71,8 @@
                         <li><a href="{{route('product-registration')}}" class="{{routeActive('product-registration')}}">  - Stock Management</a></li>
                         <!-- <li><a href="{{route('operate-sale')}}" class="{{routeActive('operate-sale')}}">  - Operate Sale</a></li> -->
                         <li><a href="{{route('customers-management')}}" class="{{routeActive('customers-management')}}">  - Sales/Customers</a></li>
-                        
+                        <li><a href="{{route('quick-sale-mbao')}}" class="{{routeActive('quick-sale-mbao')}}">  - Quick / Cash Sale</a></li>
+
                         <!-- <li><a href="#" class="#"> - Operate Sales</a></li>
                         <li><a href="#" class="#"> - Sales Report</a></li> -->
                         </ul>

@@ -133,6 +133,7 @@ Route::group(['prefix' => 'v1/','middleware' => ['auth']], function()
     Route::get('/quick-sale', function () {
         return view('admin.tuli_sales_management.quick-sale');
     })->name('quick-sale');
+    Route::view('/quick-sale/mbao', 'admin.sales_management.quick-sale')->name('quick-sale-mbao');
 
     Route::post('add/inventory', [CategoriesController::class, 'registerInvetories'])->name('add-inventory');
     Route::post('add/expense', [CategoriesController::class, 'registerExpenses'])->name('add-expense');

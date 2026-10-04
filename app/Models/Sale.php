@@ -60,7 +60,10 @@ class Sale extends Model
 		'date_sold',
 		'company_id',
 		'customer_id',
-		'invoice_issued_id'
+		'invoice_issued_id',
+		'original_price',
+		'discount_percent',
+		'discount_amount',
 	];
 
 	public function company()
