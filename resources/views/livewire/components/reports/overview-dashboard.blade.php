@@ -357,8 +357,8 @@
             });
         }
 
-        // This script is pushed above @livewireScripts, so wait for the DOM
-        // (and Livewire) before rendering or touching the Livewire global.
+        // This script is pushed above the Livewire scripts in the layout, so
+        // wait for the DOM (and Livewire) before rendering or touching it.
         function bootOverviewCharts() {
             renderOverviewCharts();
             if (window.Livewire) {
