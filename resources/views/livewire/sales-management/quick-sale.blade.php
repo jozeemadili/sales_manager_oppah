@@ -182,6 +182,7 @@
 
                     <div class="pos-card-header head-search">
                         <i class="bi bi-lightning-charge-fill"></i> Quick / Cash Sale &mdash; Mbao
+                        <span class="badge bg-success ms-1"><i class="bi bi-shop"></i> Stock: {{ strtoupper($storeName) }}</span>
                     </div>
 
                     <div class="card-body">
@@ -212,6 +213,8 @@
                                 <div>
                                     <div class="pname">{{strtoupper($product->product_name)}}</div>
                                     <div class="pmeta">
+                                        <i class="bi bi-shop"></i> {{ strtoupper(optional($product->store)->name) }}
+                                        &nbsp;·&nbsp;
                                         <i class="bi bi-upc-scan"></i> {{$product->barcode}}
                                         &nbsp;·&nbsp;
                                         @if($product->qty_remained > 0)
@@ -286,7 +289,7 @@
                                     <td>
                                         {{$item->product->product_name}}
                                         <br>
-                                        <small class="text-muted">{{$item->product->barcode}}</small>
+                                        <small class="text-muted">{{$item->product->barcode}} &middot; <i class="bi bi-shop"></i> {{ strtoupper(optional($item->product->store)->name) }}</small>
                                     </td>
 
                                     <td>

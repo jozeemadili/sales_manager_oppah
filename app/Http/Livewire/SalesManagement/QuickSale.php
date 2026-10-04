@@ -5,6 +5,7 @@ namespace App\Http\Livewire\SalesManagement;
 use Livewire\Component;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\Store;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -15,8 +16,8 @@ use Illuminate\Support\Facades\Auth;
  *  - Mbao customer #1 is a real customer, so walk-in sales use customer_id 0.
  *  - Cart rows use their own statuses so they never mix with the regular
  *    Mbao sale flow, which keeps per-customer carts in status 'Pending'.
- *  - The cart is per cashier (sold_by) and search is limited to the
- *    cashier's store, like Mbao's OparateSales.
+ *  - The cart is per cashier (sold_by) and only Mzinga stock is sold
+ *    (Store::mainStore()), whatever the cashier's own store is.
  *  - No invoice is created (same as Hardware): stock is reduced and rows
  *    are marked sold / sold_discounted.
  */
@@ -60,7 +61,7 @@ class QuickSale extends Component
     {
         $this->loadTodaySummary();
 
-        $sale = $this->cart()->with('product')->get();
+        $sale = $this->cart()->with('product.store')->get();
 
         $this->total = 0;
 
@@ -70,7 +71,10 @@ class QuickSale extends Component
 
         $this->change = max(0, (float) $this->received - (float) $this->total);
 
-        return view('livewire.sales-management.quick-sale', ['sale' => $sale]);
+        return view('livewire.sales-management.quick-sale', [
+            'sale' => $sale,
+            'storeName' => optional(Store::mainStore())->name,
+        ]);
     }
 
 
@@ -82,15 +86,17 @@ class QuickSale extends Component
     }
 
 
+    // Mbao quick-sale sells stock from the main (Mzinga) store only.
+    private function mainStoreId()
+    {
+        return optional(Store::mainStore())->id;
+    }
+
     private function productsInScope()
     {
-        $query = Product::where('status', 'Active');
-
-        if (!Auth::user()->hasFullAccess()) {
-            $query->where('store_id', Auth::user()->office_location);
-        }
-
-        return $query;
+        return Product::with('store')
+            ->where('status', 'Active')
+            ->where('store_id', $this->mainStoreId());
     }
 
 
@@ -102,11 +108,7 @@ class QuickSale extends Component
             ->where('customer_id', self::WALK_IN_CUSTOMER)
             ->whereDate('date_sold', $today)
             ->whereIn('status', self::SOLD_STATUSES)
-            ->when(!Auth::user()->hasFullAccess(), function ($query) {
-                $query->whereHas('product', function ($q) {
-                    $q->where('store_id', Auth::user()->office_location);
-                });
-            })
+            ->whereHas('product', fn ($q) => $q->where('store_id', $this->mainStoreId()))
             ->get();
 
         $this->todaySales = 0;
