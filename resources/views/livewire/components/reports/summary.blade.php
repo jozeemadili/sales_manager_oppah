@@ -195,6 +195,33 @@
             </div>
         </div>
         <div class="card-body p-0">
+            <!-- Period totals: Sales - (Inventory + Daily expenses) = Balance -->
+            <div class="row g-2 text-center px-3 pt-3">
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <div class="small text-muted">Total Sales</div>
+                        <div class="fw-bold">{{ number_format($chartTotals['sales'] ?? 0, 0) }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <div class="small text-muted">&minus; Inventory Expenses</div>
+                        <div class="fw-bold text-danger">{{ number_format($chartTotals['inventory'] ?? 0, 0) }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2">
+                        <div class="small text-muted">&minus; Daily Expenses</div>
+                        <div class="fw-bold text-warning">{{ number_format($chartTotals['daily'] ?? 0, 0) }}</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="border rounded p-2 {{ ($chartTotals['balance'] ?? 0) < 0 ? 'border-danger' : 'border-success' }}">
+                        <div class="small text-muted">= Balance ({{ ucfirst($chartPeriod) }})</div>
+                        <div class="fw-bold {{ ($chartTotals['balance'] ?? 0) < 0 ? 'text-danger' : 'text-success' }}">{{ number_format($chartTotals['balance'] ?? 0, 0) }}</div>
+                    </div>
+                </div>
+            </div>
             <figure class="highcharts-figure" wire:ignore>
                 <div id="container_sales"></div>
             </figure>
@@ -322,7 +349,8 @@ document.addEventListener('livewire:load', function () {
         series: [
             { name: 'Total Sales', data: @json($sales) },
             { name: 'Inventory Expenses', data: @json($expensesChart), color: '#e74c3c' },
-            { name: 'Daily Expenses', data: @json($dailyChart), color: '#f39c12' }
+            { name: 'Daily Expenses', data: @json($dailyChart), color: '#f39c12' },
+            { name: 'Balance', type: 'line', data: @json($balanceChart), color: '#27ae60', lineWidth: 3, marker: { radius: 3 }, zIndex: 5 }
         ]
     });
 
@@ -331,6 +359,7 @@ document.addEventListener('livewire:load', function () {
         chart.series[0].setData(data.sales, false);
         chart.series[1].setData(data.inventory, false);
         chart.series[2].setData(data.daily, false);
+        chart.series[3].setData(data.balance, false);
         chart.redraw();
     });
 });

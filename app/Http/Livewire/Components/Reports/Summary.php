@@ -25,6 +25,8 @@ class Summary extends Component
     public $chartPeriod = 'year';
     public $chartCategories = [];
     public $chartStoreName = '';
+    public $balanceChart = [];
+    public $chartTotals = [];
 
 
     public function mount()
@@ -242,7 +244,21 @@ class Summary extends Component
         $this->expensesChart = $series($inventoryExpenses, 'r.reg_at', 'r.amount_used');
         $this->dailyChart = $series($dailyExpenses, 'd.expense_date', 'd.amount');
 
+        // Balance = Sales - (Inventory Expenses + Daily Expenses), per bar and for the period.
+        $this->balanceChart = array_map(
+            fn ($sale, $inventory, $daily) => $sale - ($inventory + $daily),
+            $this->sales, $this->expensesChart, $this->dailyChart
+        );
+
+        $this->chartTotals = [
+            'sales' => array_sum($this->sales),
+            'inventory' => array_sum($this->expensesChart),
+            'daily' => array_sum($this->dailyChart),
+            'balance' => array_sum($this->balanceChart),
+        ];
+
         $this->emit('salesUpdated', [
+            'balance' => $this->balanceChart,
             'categories' => $this->chartCategories,
             'sales' => $this->sales,
             'inventory' => $this->expensesChart,
