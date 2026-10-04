@@ -19,6 +19,7 @@ class Summary extends Component
     public $sales = [];
     public $storeId = 'all';
     public $stores = [];
+    public $expenseBreakdown = [];
 
     public function mount()
     {
@@ -46,7 +47,36 @@ class Summary extends Component
             $productQuery->where('store_id', $this->storeId);
         }
 
+        $sumProductCost = (clone $productQuery)->sum(DB::raw('purchasing_price * qty_remained'));
         $sumProduct = $productQuery->sum(DB::raw('selling_price * qty_remained'));
+
+        // --- EXPENSES (recorded per inventory on inventory/preview/{id}) ---
+        // Only MBAO-type expenses; store comes from the inventory they were recorded on.
+        $expenseQuery = DB::table('expenses_records as r')
+            ->join('expenses as e', 'e.id', '=', 'r.expense_id')
+            ->join('inventories as i', 'i.id', '=', 'r.inventory_id')
+            ->where('r.status', 'Active')
+            ->where('e.to_be_used', 'MBAO')
+            ->where('r.reg_at', '<=', Carbon::now());
+
+        if ($companyId != 1) {
+            $expenseQuery->where('r.company_id', $companyId);
+        }
+
+        if ($this->storeId !== 'all') {
+            $expenseQuery->where('i.store_id', $this->storeId);
+        }
+
+        $expensesToDate = (clone $expenseQuery)->sum('r.amount_used');
+        $expensesMonth = (clone $expenseQuery)->where('r.reg_at', '>=', Carbon::now()->startOfMonth())->sum('r.amount_used');
+        $expensesToday = (clone $expenseQuery)->where('r.reg_at', '>=', Carbon::today())->sum('r.amount_used');
+
+        $this->expenseBreakdown = (clone $expenseQuery)
+            ->groupBy('e.e_name')
+            ->orderByDesc('total')
+            ->get(['e.e_name as name', DB::raw('SUM(r.amount_used) as total'), DB::raw('COUNT(*) as entries')])
+            ->map(fn ($row) => ['name' => $row->name, 'total' => (float) $row->total, 'entries' => (int) $row->entries])
+            ->all();
 
         // --- CUSTOMERS ---
         $customerQuery = Customer::query();
@@ -84,6 +114,10 @@ class Summary extends Component
         // --- SUMMARY DATA ---
         $this->summary = [
             'sumProduct'       => number_format($sumProduct, 0, '.', ','),
+            'sumProductCost'   => number_format($sumProductCost, 0, '.', ','),
+            'expenses_to_date' => number_format($expensesToDate, 0, '.', ','),
+            'expenses_month'   => number_format($expensesMonth, 0, '.', ','),
+            'expenses_today'   => number_format($expensesToday, 0, '.', ','),
             'generated_amount' => number_format($invoiceTodayQuery->sum('total_invoice_amount'), 2, '.', ','),
             'paid_amount'      => number_format($sumToday, 2, '.', ','),
             'unpaid_amount'    => number_format($invoiceTodayQuery->sum('amount_remained'), 2, '.', ','),

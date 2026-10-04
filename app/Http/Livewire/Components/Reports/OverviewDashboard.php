@@ -82,7 +82,18 @@ class OverviewDashboard extends Component
 
         $customers = $this->scopeByCompany(Customer::query());
 
+        // Same definition as the Mbao summary: MBAO-type expenses recorded on inventories.
+        $expensesToDate = $this->scopeByCompany(
+            DB::table('expenses_records as r')
+                ->join('expenses as e', 'e.id', '=', 'r.expense_id')
+                ->where('r.status', 'Active')
+                ->where('e.to_be_used', 'MBAO')
+                ->where('r.reg_at', '<=', Carbon::now()),
+            'r.company_id'
+        )->sum('r.amount_used');
+
         $this->mbao = [
+            'expenses_to_date' => $expensesToDate,
             'stock_value'     => $stockValue,
             'generated_today' => $invoiceTodayQuery->sum('total_invoice_amount'),
             'paid_today'      => $paidToday,

@@ -65,6 +65,7 @@
             </div>
             <div class="ov-card__footer">
                 <span>Unpaid overall: <strong>{{ number_format($mbao['unpaid_overall'], 0) }}</strong></span>
+                <span>Expenses to date: <strong>{{ number_format($mbao['expenses_to_date'], 0) }}</strong></span>
                 <span>Customers: <strong>{{ number_format($mbao['customers'], 0) }}</strong></span>
             </div>
             <div id="ov_chart_mbao" class="ov-chart"></div>
@@ -271,6 +272,8 @@
 
     .ov-card__footer {
         display: flex;
+        flex-wrap: wrap;
+        gap: 4px 12px;
         justify-content: space-between;
         font-size: 12.5px;
         color: var(--ov-muted);
