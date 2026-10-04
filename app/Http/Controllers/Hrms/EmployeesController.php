@@ -24,7 +24,7 @@ class EmployeesController extends Controller
     public function profile($id)
     {
        
-            $Employees= Employee::with('terms_of_contracts')->where($id);
+            $Employees= Employee::with('terms_of_contracts')->find($id);
             return view('admin.hrms.staff-profile',['Employees' => $Employees]);
        
     }

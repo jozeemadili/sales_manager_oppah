@@ -33,7 +33,7 @@ class InvoiceController extends Controller
         if($Invoice != null)
         {
            
-            $qrcode = $Utils->getQrcode("https://jaja.co.tz/".$id, 50, 'svg');
+            $qrcode = $Utils->getQrcode("https://oppah01.co.tz/".$id, 50, 'svg');
             $svgContent = $Utils->svgToBase64($qrcode);
             $pdf       = Pdf::loadView('admin.sales_management.invoice-download', ['quotation' => $Invoice,'qrcode'=>$svgContent]);
             // return View('admin.sales_management.invoice-download', ['quotation' => $Invoice]);

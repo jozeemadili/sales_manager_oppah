@@ -10,9 +10,17 @@ class Utils
 {
     public static function saveLogs($fileName, $logs)
     {
-      $myfile = fopen("_logs_".$fileName.".txt", "w") or die("Unable to open file!");
-      fwrite($myfile, $logs);
-      fclose($myfile);
+      $path = storage_path('logs/'.$fileName.'.log');
+
+      if (is_array($logs) || is_object($logs)) {
+          $logs = json_encode($logs, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+      }
+
+      file_put_contents(
+          $path,
+          "[".date('Y-m-d H:i:s')."] ".$logs.PHP_EOL,
+          FILE_APPEND
+      );
     }
 
     public static function dateDifference($start, $end, $whatToReturn = "m")
