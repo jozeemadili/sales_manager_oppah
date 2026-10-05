@@ -8,6 +8,7 @@ import '../local_db.dart';
 import '../session.dart';
 import '../sync_service.dart';
 import '../tracker.dart';
+import '../theme.dart';
 import 'common.dart';
 import 'login_screen.dart';
 import 'new_trip_screen.dart';
@@ -96,7 +97,7 @@ class _TripsScreenState extends State<TripsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Trips / Safari zangu'),
+        title: const LogoTitle('My trips / Safari zangu'),
         actions: [IconButton(icon: const Icon(Icons.logout), onPressed: _logout, tooltip: 'Log out')],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -134,6 +135,8 @@ class _TripsScreenState extends State<TripsScreen> {
 
   Widget _statusBar() {
     return Card(
+      color: OppahTheme.soft,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -146,9 +149,9 @@ class _TripsScreenState extends State<TripsScreen> {
             ValueListenableBuilder<String?>(
               valueListenable: Tracker.activeTrip,
               builder: (_, active, _) => Row(children: [
-                Icon(active != null ? Icons.my_location : Icons.location_disabled, size: 18, color: active != null ? Colors.green : Colors.grey),
+                Icon(active != null ? Icons.my_location : Icons.location_disabled, size: 18, color: active != null ? OppahTheme.blue : OppahTheme.muted),
                 const SizedBox(width: 6),
-                Expanded(child: Text(active != null ? 'Tracking trip ${Tracker.activeLabel.value}' : 'Not tracking')),
+                Expanded(child: Text(active != null ? 'Tracking trip ${Tracker.activeLabel.value}' : 'Not tracking', style: TextStyle(color: active != null ? OppahTheme.blue : OppahTheme.muted))),
               ]),
             ),
             AnimatedBuilder(
@@ -204,10 +207,10 @@ class _TripsScreenState extends State<TripsScreen> {
       child: ListTile(
         leading: ValueListenableBuilder<String?>(
           valueListenable: Tracker.activeTrip,
-          builder: (_, active, _) => Icon(active == ref ? Icons.my_location : Icons.local_shipping, color: active == ref ? Colors.green : null),
+          builder: (_, active, _) => Icon(active == ref ? Icons.my_location : Icons.local_shipping, color: active == ref ? OppahTheme.blue : OppahTheme.green),
         ),
         title: Text(local ? 'New trip (not sent yet)' : '${t['trip_no']}'),
-        subtitle: Text('${t['route_date']} · ${t['going_customer'] ?? ''}${(t['return_customer'] ?? '').toString().isNotEmpty ? ' ⇄ ${t['return_customer']}' : ''}'),
+        subtitle: Text('${t['route_date']} · ${t['going_customer'] ?? ''}${(t['return_customer'] ?? '').toString().isNotEmpty ? ' → ${t['return_customer']}' : ''}'),
         trailing: statusChip(status),
         onTap: () => _open(ref, t),
       ),

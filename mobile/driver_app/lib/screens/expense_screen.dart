@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../local_db.dart';
 import '../location_helper.dart';
 import '../session.dart';
+import '../theme.dart';
 import 'common.dart';
 
 class ExpenseScreen extends StatefulWidget {
@@ -40,7 +41,7 @@ class _ExpenseScreenState extends State<ExpenseScreen> {
   Widget build(BuildContext context) {
     final types = Session.expenseTypes;
     return Scaffold(
-      appBar: AppBar(title: const Text('Trip expense / Matumizi')),
+      appBar: AppBar(title: const LogoTitle('Trip expense / Matumizi')),
       body: Form(
         key: _form,
         child: ListView(padding: const EdgeInsets.all(16), children: [

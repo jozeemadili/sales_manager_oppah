@@ -4,6 +4,7 @@ import '../api.dart';
 import '../location_helper.dart';
 import '../session.dart';
 import '../sync_service.dart';
+import '../theme.dart';
 import 'common.dart';
 import 'trips_screen.dart';
 
@@ -49,9 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(Icons.local_shipping, size: 72, color: Theme.of(context).colorScheme.primary),
-                  const SizedBox(height: 8),
-                  Text('Oppah Driver', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineSmall),
+                  Image.asset('assets/logo.png', height: 170),
+                  const SizedBox(height: 4),
+                  Text('Driver', textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleLarge?.copyWith(color: OppahTheme.muted)),
                   const Text('Log in with your portal account\nIngia kwa akaunti yako ya portal', textAlign: TextAlign.center),
                   const SizedBox(height: 28),
                   TextFormField(

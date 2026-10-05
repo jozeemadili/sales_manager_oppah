@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../local_db.dart';
 import '../location_helper.dart';
+import '../theme.dart';
 import 'common.dart';
 
 class RoutePlanScreen extends StatefulWidget {
@@ -44,7 +45,7 @@ class _RoutePlanScreenState extends State<RoutePlanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Route plan / fuel')),
+      appBar: AppBar(title: const LogoTitle('Route plan / fuel')),
       body: Form(
         key: _form,
         child: ListView(padding: const EdgeInsets.all(16), children: [

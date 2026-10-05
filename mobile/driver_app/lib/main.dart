@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'screens/login_screen.dart';
 import 'screens/trips_screen.dart';
 import 'session.dart';
+import 'theme.dart';
 import 'sync_service.dart';
 import 'tracker.dart';
 
@@ -32,10 +33,10 @@ class OppahDriverApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Oppah Driver',
+      title: 'Oppah',
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: const Color(0xFF4C73AA), useMaterial3: true),
+      theme: OppahTheme.light,
       home: loggedIn ? const TripsScreen() : const LoginScreen(),
     );
   }

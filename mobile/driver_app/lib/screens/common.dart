@@ -13,17 +13,16 @@ void toast(BuildContext context, String message, {bool error = false}) {
 }
 
 Widget statusChip(String status) {
-  final color = switch (status) {
-    'Pending' => Colors.orange,
-    'submitted' => Colors.green,
-    'Waiting to sync' => Colors.blueGrey,
-    _ => Colors.grey,
+  final (bg, fg, label) = switch (status) {
+    'Pending' => (const Color(0xFFFAEEDA), const Color(0xFF633806), 'Pending'),
+    'submitted' => (const Color(0xFFEAF3DE), const Color(0xFF27500A), 'Submitted'),
+    'Waiting to sync' => (const Color(0xFFF1EFE8), const Color(0xFF444441), 'Waiting to sync'),
+    _ => (const Color(0xFFF1EFE8), const Color(0xFF444441), status),
   };
-  return Chip(
-    label: Text(status == 'submitted' ? 'Submitted' : status, style: const TextStyle(color: Colors.white, fontSize: 12)),
-    backgroundColor: color,
-    visualDensity: VisualDensity.compact,
-    side: BorderSide.none,
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+    decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+    child: Text(label, style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w500)),
   );
 }
 

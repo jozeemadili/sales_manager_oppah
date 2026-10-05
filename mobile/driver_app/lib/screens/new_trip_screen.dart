@@ -7,6 +7,7 @@ import '../location_helper.dart';
 import '../session.dart';
 import '../sync_service.dart';
 import '../tracker.dart';
+import '../theme.dart';
 import 'common.dart';
 
 /// New trip (like Trips > New on the portal). Saved on the phone first, sent
@@ -61,7 +62,7 @@ class _NewTripScreenState extends State<NewTripScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New trip / Safari mpya')),
+      appBar: AppBar(title: const LogoTitle('New trip / Safari mpya')),
       body: Form(
         key: _form,
         child: ListView(

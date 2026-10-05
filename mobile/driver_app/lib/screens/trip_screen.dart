@@ -10,6 +10,7 @@ import '../location_helper.dart';
 import '../session.dart';
 import '../sync_service.dart';
 import '../tracker.dart';
+import '../theme.dart';
 import 'common.dart';
 import 'expense_screen.dart';
 import 'route_plan_screen.dart';
@@ -127,7 +128,7 @@ class _TripScreenState extends State<TripScreen> {
     final tracking = Tracker.isTracking(widget.tripRef, _otherRef);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_label)),
+      appBar: AppBar(title: LogoTitle(_label)),
       body: RefreshIndicator(
         onRefresh: () async {
           await SyncService.run();
@@ -143,7 +144,7 @@ class _TripScreenState extends State<TripScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(children: [
-                      Expanded(child: Text('${_trip['going_customer'] ?? ''}${(_trip['return_customer'] ?? '').toString().isNotEmpty ? '  ⇄  ${_trip['return_customer']}' : ''}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
+                      Expanded(child: Text('${_trip['going_customer'] ?? ''}${(_trip['return_customer'] ?? '').toString().isNotEmpty ? '  →  ${_trip['return_customer']}' : ''}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
                       statusChip(_onPortal ? (_trip['status'] ?? '').toString() : 'Waiting to sync'),
                     ]),
                     Text('Date: ${_trip['route_date'] ?? ''}   ${_trip['truck'] != null ? 'Truck: ${_trip['truck']}' : ''}'),
@@ -163,7 +164,7 @@ class _TripScreenState extends State<TripScreen> {
             ),
             if (_open)
               Card(
-                color: tracking ? Colors.green.shade50 : null,
+                color: tracking ? const Color(0xFFE6F1FB) : null,
                 child: SwitchListTile(
                   title: Text(tracking ? 'Tracking ON / Inafuatiliwa' : 'Tracking OFF'),
                   subtitle: const Text('Records your location during this trip'),
