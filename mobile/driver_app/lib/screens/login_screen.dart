@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../api.dart';
-import '../location_helper.dart';
 import '../session.dart';
 import '../sync_service.dart';
 import '../theme.dart';
 import 'common.dart';
-import 'trips_screen.dart';
+import 'location_gate.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -27,10 +26,9 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _busy = true);
     try {
       await Session.login(_email.text.trim(), _password.text);
-      await LocationHelper.ensurePermission();
       SyncService.start();
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const TripsScreen()));
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LocationGate()));
     } on ApiException catch (e) {
       if (mounted) toast(context, e.message, error: true);
     } finally {

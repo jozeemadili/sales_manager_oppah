@@ -56,7 +56,21 @@ class TripLocationController extends Controller
         // Last known position per truck ("last seen").
         $lastSeen = $points->groupBy('truck')->map(fn ($p) => $p->last())->values();
 
+        // Open app-tracked trips that have gone quiet (phone off, GPS off...).
+        $silent = TripLocation::silentTrips();
+        $silentTrips = TrucksRoute::with(['our_truck.driver'])->whereIn('id', $silent->keys())->get()
+            ->map(fn ($r) => [
+                'route_id' => $r->id,
+                'trip_no' => $r->trip_no,
+                'truck' => optional($r->our_truck)->plate_no,
+                'driver' => optional(optional($r->our_truck)->driver)->first_name,
+                'phone' => optional(optional($r->our_truck)->driver)->mobile,
+                'last_seen' => $silent[$r->id],
+            ])
+            ->sortBy('last_seen')->values();
+
         return view('admin.sales_management.trips-map', [
+            'silentTrips' => $silentTrips,
             'points' => $points,
             'lastSeen' => $lastSeen,
             'noLocation' => $locations->reject->hasPosition()->values(),

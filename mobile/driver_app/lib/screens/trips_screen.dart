@@ -57,6 +57,13 @@ class _TripsScreenState extends State<TripsScreen> {
     }
     _local = await LocalDb.unsyncedTrips();
     _failed = await LocalDb.failed();
+
+    // Always track the newest open trip (drivers can't switch it off).
+    final open = <MapEntry<String, String>>[
+      for (final t in _local) MapEntry('uuid:${t['uuid']}', 'new trip'),
+      for (final t in _trips.where((t) => t['status'] == 'Pending')) MapEntry('id:${t['id']}', '${t['trip_no']}'),
+    ];
+    await Tracker.follow(open);
     await SyncService.refreshCounts();
     if (mounted) setState(() => _loading = false);
   }
@@ -153,6 +160,22 @@ class _TripsScreenState extends State<TripsScreen> {
                 const SizedBox(width: 6),
                 Expanded(child: Text(active != null ? 'Tracking trip ${Tracker.activeLabel.value}' : 'Not tracking', style: TextStyle(color: active != null ? OppahTheme.blue : OppahTheme.muted))),
               ]),
+            ),
+            ValueListenableBuilder<String?>(
+              valueListenable: Tracker.problem,
+              builder: (_, problem, _) => problem == null
+                  ? const SizedBox.shrink()
+                  : Container(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: const Color(0xFFFCEBEB), borderRadius: BorderRadius.circular(8)),
+                      child: Row(children: [
+                        const Icon(Icons.warning_amber, color: Color(0xFFA32D2D), size: 18),
+                        const SizedBox(width: 6),
+                        Expanded(child: Text(problem, style: const TextStyle(color: Color(0xFF791F1F)))),
+                        TextButton(onPressed: () => _load(), child: const Text('Retry')),
+                      ]),
+                    ),
             ),
             AnimatedBuilder(
               animation: Listenable.merge([SyncService.pending, SyncService.pendingPoints]),

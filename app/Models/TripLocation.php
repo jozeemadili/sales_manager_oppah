@@ -26,6 +26,32 @@ class TripLocation extends Model
 
 	const STATUSES = ['ok', 'denied', 'unavailable', 'timeout', 'unsupported'];
 
+	// An open trip tracked by the driver app with no point for this long is
+	// flagged "No signal" (the app sends a heartbeat every 10 min when parked).
+	const SILENT_MINUTES = 30;
+
+	/**
+	 * Open (Pending) trips tracked by the driver app whose last location is
+	 * older than SILENT_MINUTES: phone off, GPS off, permission removed or
+	 * app closed. Returns [route_id => last seen Carbon].
+	 */
+	public static function silentTrips()
+	{
+		$lastSeen = static::query()
+			->join('trucks_routes as r', 'r.id', '=', 'trip_locations.route_id')
+			->where('r.status', 'Pending')
+			->where('trip_locations.source', 'app')
+			->groupBy('trip_locations.route_id')
+			->selectRaw('trip_locations.route_id, MAX(COALESCE(trip_locations.recorded_at, trip_locations.created_at)) as last_seen')
+			->pluck('last_seen', 'route_id');
+
+		$limit = now()->subMinutes(self::SILENT_MINUTES);
+
+		return $lastSeen
+			->map(fn ($seen) => \Carbon\Carbon::parse($seen))
+			->filter(fn ($seen) => $seen->lt($limit));
+	}
+
 	// Why there is no position, in plain words (shown on the trip map pages).
 	const REASONS = [
 		'denied' => 'Driver refused location',

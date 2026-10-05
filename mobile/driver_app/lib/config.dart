@@ -11,6 +11,10 @@ class Config {
   static const Duration trackingInterval = Duration(seconds: int.fromEnvironment('TRACK_SECONDS', defaultValue: 120));
   static const int trackingDistanceMeters = 100;
 
+  /// While parked (no movement), still record a point this often, so the
+  /// office can tell "parked" from "phone off / GPS off".
+  static const Duration heartbeatInterval = Duration(minutes: 10);
+
   /// How often queued entries and points are pushed when online.
   static const Duration syncInterval = Duration(minutes: 1);
 }

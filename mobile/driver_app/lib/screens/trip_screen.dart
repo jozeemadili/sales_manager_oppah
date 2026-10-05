@@ -82,18 +82,6 @@ class _TripScreenState extends State<TripScreen> {
     }
   }
 
-  Future<void> _toggleTracking() async {
-    if (Tracker.isTracking(widget.tripRef, _otherRef)) {
-      await Tracker.stop();
-    } else {
-      final ok = await Tracker.start(widget.tripRef, _label);
-      if (!ok && mounted) {
-        toast(context, 'Allow location and turn on GPS to track. / Ruhusu mahali na washa GPS.', error: true);
-      }
-    }
-    setState(() {});
-  }
-
   Future<void> _submit() async {
     final ok = await showDialog<bool>(
       context: context,
@@ -164,12 +152,11 @@ class _TripScreenState extends State<TripScreen> {
             ),
             if (_open)
               Card(
-                color: tracking ? const Color(0xFFE6F1FB) : null,
-                child: SwitchListTile(
-                  title: Text(tracking ? 'Tracking ON / Inafuatiliwa' : 'Tracking OFF'),
-                  subtitle: const Text('Records your location during this trip'),
-                  value: tracking,
-                  onChanged: (_) => _toggleTracking(),
+                color: tracking ? const Color(0xFFE6F1FB) : const Color(0xFFF1EFE8),
+                child: ListTile(
+                  leading: Icon(tracking ? Icons.my_location : Icons.location_searching, color: tracking ? OppahTheme.blue : OppahTheme.muted),
+                  title: Text(tracking ? 'Location recorded during this trip' : 'Another open trip is being tracked'),
+                  subtitle: const Text('Stops automatically when you Send To Stock. / Inasimama ukituma.'),
                 ),
               ),
             const SizedBox(height: 8),

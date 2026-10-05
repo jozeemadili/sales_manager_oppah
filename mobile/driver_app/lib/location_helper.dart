@@ -4,14 +4,19 @@ import 'package:geolocator/geolocator.dart';
 /// route plan, expense, submit). Never throws: without a fix it returns the
 /// reason, and the action is still saved ("no location").
 class LocationHelper {
-  /// Ask for permission once (Android dialog). Returns false if refused.
-  static Future<bool> ensurePermission() async {
-    if (!await Geolocator.isLocationServiceEnabled()) return false;
-    var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+  /// Why location can't be used right now, in plain words (null when OK).
+  static Future<String?> problem() async {
+    if (!await Geolocator.isLocationServiceEnabled()) {
+      return 'Location (GPS) is OFF. Turn it on. / Washa Location (GPS).';
     }
-    return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.deniedForever) {
+      return 'Location is blocked for Oppah. Allow it in Settings. / Ruhusu mahali kwenye Settings.';
+    }
+    if (permission == LocationPermission.denied) {
+      return 'Oppah needs permission to use location. / Ruhusu mahali.';
+    }
+    return null;
   }
 
   /// geo_* fields the portal API expects with each action.

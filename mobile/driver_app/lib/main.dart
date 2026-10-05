@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'screens/login_screen.dart';
-import 'screens/trips_screen.dart';
+import 'screens/location_gate.dart';
 import 'session.dart';
 import 'theme.dart';
 import 'sync_service.dart';
@@ -37,7 +37,7 @@ class OppahDriverApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: OppahTheme.light,
-      home: loggedIn ? const TripsScreen() : const LoginScreen(),
+      home: loggedIn ? const LocationGate() : const LoginScreen(),
     );
   }
 }

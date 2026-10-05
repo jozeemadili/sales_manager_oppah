@@ -328,6 +328,12 @@
                 $tripTrackPoints = $tripLocations->where('event', 'tracking')->count();
             @endphp
             <div class="tab-pane fade" id="tripMap" role="tabpanel">
+                @php $tripSilentSince = \App\Models\TripLocation::silentTrips()->get($TrucksRoute->id); @endphp
+                @if($tripSilentSince)
+                    <div class="alert alert-danger py-2">
+                        <strong>No signal</strong> from the driver's phone since {{ $tripSilentSince->format('d M H:i') }} ({{ $tripSilentSince->diffForHumans() }}).
+                    </div>
+                @endif
                 @if($tripPoints->count())
                     @if($tripTrackPoints)
                         <div class="small text-muted mb-1">&#128241; {{ $tripTrackPoints }} tracking points from the driver app (blue line).</div>

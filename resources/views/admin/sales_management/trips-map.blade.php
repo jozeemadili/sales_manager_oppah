@@ -23,6 +23,22 @@ Trips Map
   <div class="container-fluid">
       <div class="card">
           <div class="card-body">
+              @if($silentTrips->count())
+              <div class="alert alert-danger">
+                  <strong><i class="icofont icofont-warning"></i> No signal from {{ $silentTrips->count() }} {{ \Illuminate\Support\Str::plural('truck', $silentTrips->count()) }} on an open trip</strong>
+                  <small class="d-block mb-2">No location for more than {{ \App\Models\TripLocation::SILENT_MINUTES }} minutes: the phone may be off, GPS turned off, location permission removed or the app closed. Call the driver.</small>
+                  <ul class="mb-0">
+                      @foreach($silentTrips as $t)
+                      <li>
+                          <strong>{{ $t['truck'] }}</strong> &middot; <a href="{{ route('route-preview', $t['route_id']) }}">{{ $t['trip_no'] }}</a>
+                          &middot; {{ $t['driver'] }} @if($t['phone']) (+255{{ $t['phone'] }}) @endif
+                          &middot; last seen <strong>{{ $t['last_seen']->format('d M H:i') }}</strong> ({{ $t['last_seen']->diffForHumans() }})
+                      </li>
+                      @endforeach
+                  </ul>
+              </div>
+              @endif
+
               <form method="get" action="{{ route('trips-map') }}" class="row g-2 align-items-end mb-3">
                   <div class="col-md-3">
                       <label class="col-form-label">From</label>
