@@ -588,25 +588,33 @@ class Summary extends Component
 
     public function saveDeposit()
     {
+        // Re-read what is left to deposit right now (another deposit may have been saved meanwhile).
+        $this->loadData();
+        $left = (float) $this->summary['to_deposit_raw'];
+
+        if ($left <= 0) {
+            $this->addError('depositAmount', 'There is no balance left to deposit today.');
+            return;
+        }
+
+        $this->depositAmount = str_replace(',', '', (string) $this->depositAmount);
+
         $this->validate([
+            'depositAmount' => ['required', 'numeric', 'gt:0', 'max:'.$left],
             'depositBank' => ['required', 'string', 'max:100'],
             'depositAccount' => ['required', 'string', 'max:100'],
             'depositSlips' => ['required', 'array', 'min:1'],
             'depositSlips.*' => ['file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ], [
+            'depositAmount.gt' => 'Enter an amount above 0.',
+            'depositAmount.max' => 'You can deposit at most '.number_format($left, 2).' TZS (left to deposit today).',
             'depositSlips.required' => 'Attach at least one bank slip.',
             'depositSlips.*.mimes' => 'Slips must be JPG, PNG or PDF.',
             'depositSlips.*.max' => 'Each slip must be 5 MB or smaller.',
         ]);
 
-        // The amount is always today's balance not yet deposited (never typed in).
-        $this->loadData();
-        $amount = $this->summary['to_deposit_raw'];
-
-        if ($amount <= 0) {
-            $this->addError('depositAmount', 'There is no balance left to deposit today.');
-            return;
-        }
+        // Part of the balance can be deposited now and the rest later today.
+        $amount = round((float) $this->depositAmount, 2);
 
         $deposit = BankDeposist::create([
             'bank_name' => trim($this->depositBank),
@@ -628,7 +636,10 @@ class Summary extends Component
 
         $this->depositSlips = [];
         $this->loadData();
-        $this->dispatchBrowserEvent('deposit-saved', ['amount' => number_format($amount, 2)]);
+        $this->dispatchBrowserEvent('deposit-saved', [
+            'amount' => number_format($amount, 2),
+            'left' => $this->summary['to_deposit'],
+        ]);
     }
 
     public function showDeposits()

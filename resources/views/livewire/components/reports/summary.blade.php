@@ -442,8 +442,14 @@
                     <div class="modal-body">
                         <div class="form-group mb-3">
                             <label class="col-form-label">Amount to deposit (TZS)</label>
-                            <input class="form-control fw-bold fs-5" type="text" value="{{ number_format((float) $depositAmount, 2) }}" readonly>
-                            <small class="text-muted">Today's balance not yet deposited ({{ strtoupper($chartStoreName) }}).</small>
+                            <input class="form-control fw-bold fs-5" type="number" step="0.01" min="0.01" max="{{ $summary['to_deposit_raw'] }}"
+                                   wire:model.defer="depositAmount" id="depositAmountInput"
+                                   data-left="{{ $summary['to_deposit_raw'] }}" oninput="updateDepositRemaining()">
+                            <div class="d-flex justify-content-between small mt-1">
+                                <span class="text-muted">Left to deposit today: <strong>{{ number_format((float) $summary['to_deposit_raw'], 2) }}</strong></span>
+                                <span>Remaining after this deposit: <strong id="depositRemaining">{{ number_format(max(0, (float) $summary['to_deposit_raw'] - (float) $depositAmount), 2) }}</strong></span>
+                            </div>
+                            <div class="text-danger small" id="depositTooMuch" style="display: none;">More than what is left to deposit today.</div>
                             @error('depositAmount')<div class="text-danger small">{{ $message }}</div>@enderror
                         </div>
                         <div class="row">
@@ -733,7 +739,17 @@ document.addEventListener('livewire:load', function () {
         (bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el)).show();
     }
 
-    window.addEventListener('open-deposit-modal', () => showModal('depositModal'));
+    window.updateDepositRemaining = function () {
+        const input = document.getElementById('depositAmountInput');
+        if (!input) { return; }
+        const left = parseFloat(input.dataset.left) || 0;
+        const amount = parseFloat(input.value) || 0;
+        document.getElementById('depositRemaining').textContent =
+            Math.max(0, left - amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('depositTooMuch').style.display = amount > left ? 'block' : 'none';
+    };
+
+    window.addEventListener('open-deposit-modal', () => { showModal('depositModal'); setTimeout(updateDepositRemaining, 50); });
     window.addEventListener('open-end-day-modal', () => showModal('endDayModal'));
     window.addEventListener('end-day-message', (event) => alert(event.detail.text));
     window.addEventListener('end-day-closed', (event) => {
@@ -746,7 +762,7 @@ document.addEventListener('livewire:load', function () {
         const el = document.getElementById('depositModal');
         const modal = bootstrap.Modal.getInstance(el);
         if (modal) { modal.hide(); }
-        const text = 'Deposit of ' + event.detail.amount + ' TZS recorded.';
+        const text = 'Deposit of ' + event.detail.amount + ' TZS recorded. Left to deposit today: ' + event.detail.left + ' TZS.';
         if (typeof swal === 'function') { swal({ title: 'Saved', text: text, icon: 'success' }); } else { alert(text); }
     });
 
