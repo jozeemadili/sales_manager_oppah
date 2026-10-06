@@ -91,12 +91,6 @@
     .hero h1 span { color: #f2b56b; }
     .hero .lead { font-size: 19px; color: rgba(255,255,255,.88); max-width: 560px; margin: 0; }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
-    .hero .wrap.hero-grid { display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: end; }
-    .hero-card { width: 320px; border-radius: 26px; padding: 22px 24px; color: #fff; }
-    .hero-card h3 { font-size: 16px; margin: 0 0 12px; }
-    .hero-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-    .hero-card li { display: flex; gap: 12px; align-items: center; font-size: 15px; }
-    .hero-card .ic { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.18); font-size: 16px; }
     .hero-dots { position: absolute; z-index: 2; left: 0; right: 0; bottom: 28px; display: flex; justify-content: center; gap: 8px; }
     .hero-dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,.45); cursor: pointer; }
     .hero-dots button.on { background: #fff; width: 26px; border-radius: 5px; }
@@ -210,8 +204,6 @@
         .foot-grid { grid-template-columns: 1fr 1fr; }
         .hero::after { background: linear-gradient(180deg, rgba(15,26,40,.6) 0%, rgba(15,26,40,.88) 100%); }
         .menu-btn { display: block; }
-        .hero .wrap.hero-grid { grid-template-columns: 1fr; }
-        .hero-card { display: none; }
         .service { min-height: 420px; }
         .quote { justify-content: center; min-height: 0; padding: 16px; }
         nav#siteNav { display: none; position: absolute; top: 80px; left: 16px; right: 16px; flex-direction: column; align-items: stretch; gap: 2px; padding: 10px; border-radius: 24px; background: rgba(15,26,40,.72); }
@@ -255,7 +247,7 @@
             <div class="{{ $i === 0 ? 'on' : '' }}" @if($i === 0) style="background-image:url('{{ $img($slide) }}')" @else data-bg="{{ $img($slide) }}" @endif></div>
         @endforeach
     </div>
-    <div class="wrap hero-grid">
+    <div class="wrap">
         <div class="hero-copy">
             <div class="eyebrow">Kongowe Mzinga &middot; Dar es Salaam</div>
             <h1>Timber you can build on. <span>Trucks you can count on.</span></h1>
@@ -264,15 +256,6 @@
                 <a class="btn btn-wa" href="{{ $wa('Hello Oppah, I would like a quote for ') }}" target="_blank" rel="noopener">WhatsApp for a quote</a>
                 <a class="btn btn-glass glass" href="#services">Our services <span class="arrow">&rarr;</span></a>
             </div>
-        </div>
-        <div class="hero-card glass">
-            <h3>Why customers choose Oppah</h3>
-            <ul>
-                <li><span class="ic">&#129717;</span>Timber from our own yard</li>
-                <li><span class="ic">&#128667;</span>Our own Scania trucks</li>
-                <li><span class="ic">&#128205;</span>Every trip followed</li>
-                <li><span class="ic">&#129534;</span>Proper invoices &amp; receipts</li>
-            </ul>
         </div>
     </div>
     <div class="hero-dots">
