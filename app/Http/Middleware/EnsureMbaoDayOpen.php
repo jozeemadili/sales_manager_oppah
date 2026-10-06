@@ -79,7 +79,7 @@ class EnsureMbaoDayOpen
         }
 
         $route = $request->route();
-        if (!$route || !in_array($route->getControllerClass(), self::MBAO_CONTROLLERS, true)) {
+        if (!$route || !in_array($this->controllerOf($route), self::MBAO_CONTROLLERS, true)) {
             return false;
         }
 
@@ -90,6 +90,15 @@ class EnsureMbaoDayOpen
         }
 
         return !in_array($name, self::READ_ONLY_POSTS, true);
+    }
+
+    // Controller class of a route; null for closure / view routes (which have
+    // no controller - Route::getControllerClass() crashes on closures in Laravel 9).
+    private function controllerOf($route)
+    {
+        $controller = $route->getAction('controller');
+
+        return is_string($controller) ? explode('@', $controller)[0] : null;
     }
 
     private function livewireCallIsBlocked(Request $request)
