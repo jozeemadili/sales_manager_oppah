@@ -45,9 +45,19 @@
     h1 span { color: var(--blue); }
     .lead { font-size: 18px; color: var(--muted); max-width: 560px; }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
-    .hero-logo { background: #fff; border-radius: 20px; padding: 36px; box-shadow: 0 20px 50px rgba(47,79,127,.12); text-align: center; }
-    .hero-logo img { max-width: 100%; height: auto; }
-    .hero-logo p { margin: 12px 0 0; color: var(--muted); font-style: italic; }
+    .hero-photo { position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(47,79,127,.18); aspect-ratio: 3 / 4; max-height: 520px; margin-left: auto; }
+    .hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hero-photo figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 18px; color: #fff; font-weight: 600; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
+
+    .fleet { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .fleet button { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 12px; overflow: hidden; aspect-ratio: 3 / 4; display: block; }
+    .fleet button:first-child { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
+    .fleet img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
+    .fleet button:hover img, .fleet button:focus-visible img { transform: scale(1.04); }
+    .lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(10,15,25,.92); display: none; align-items: center; justify-content: center; padding: 16px; }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
+    .lightbox .close { position: absolute; top: 12px; right: 16px; background: none; border: 0; color: #fff; font-size: 36px; line-height: 1; cursor: pointer; }
 
     section { padding: 72px 0; }
     section.alt { background: var(--soft); }
@@ -93,6 +103,8 @@
     @media (max-width: 900px) {
         .hero .wrap, .split { grid-template-columns: 1fr; }
         .grid3, .contact { grid-template-columns: 1fr 1fr; }
+        .fleet { grid-template-columns: repeat(2, 1fr); }
+        .hero-photo { margin: 0 auto; max-width: 420px; }
         .steps { grid-template-columns: 1fr 1fr; row-gap: 28px; }
         h1 { font-size: 36px; }
         nav a:not(.btn) { display: none; }
@@ -113,6 +125,7 @@
         <a class="brand" href="#top"><img src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo"><span>Oppah</span></a>
         <nav>
             <a href="#business">What we do</a>
+            <a href="#fleet">Our fleet</a>
             <a href="#system">Our system</a>
             <a href="#contact">Contact</a>
             <a class="btn btn-primary" href="{{ route('login') }}" target="_top">Staff login</a>
@@ -131,10 +144,10 @@
                 <a class="btn btn-ghost" href="#business">See what we do</a>
             </div>
         </div>
-        <div class="hero-logo">
-            <img src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }}">
-            <p>Smart Generation In Smart Business</p>
-        </div>
+        <figure class="hero-photo">
+            <img src="{{ asset('assets/images/website/truck-2.jpg') }}" alt="Oppah Scania truck loaded with timber">
+            <figcaption>Our trucks, our timber, delivered</figcaption>
+        </figure>
     </div>
 </div>
 
@@ -172,7 +185,36 @@
     </div>
 </section>
 
-<section class="alt" id="system">
+<section class="alt" id="fleet">
+    <div class="wrap">
+        <div class="section-head">
+            <div class="eyebrow">Our fleet</div>
+            <h2>Our trucks on the road</h2>
+            <p>A modern Scania fleet in Oppah colours, carrying timber and cargo across Tanzania.</p>
+        </div>
+        <div class="fleet">
+            @foreach([
+                ['truck-1', 'Oppah Scania truck'],
+                ['truck-5', 'Oppah truck loaded with timber'],
+                ['truck-3', 'Oppah truck carrying a full timber load'],
+                ['truck-4', 'Oppah truck loaded with cargo'],
+                ['truck-6', 'Oppah truck on a village road'],
+                ['truck-7', 'Oppah truck being prepared for a trip'],
+            ] as [$file, $alt])
+                <button type="button" data-full="{{ asset('assets/images/website/'.$file.'.jpg') }}" aria-label="View larger: {{ $alt }}">
+                    <img src="{{ asset('assets/images/website/'.$file.'.jpg') }}" alt="{{ $alt }}" loading="lazy">
+                </button>
+            @endforeach
+        </div>
+    </div>
+</section>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Truck photo">
+    <button type="button" class="close" aria-label="Close">&times;</button>
+    <img src="" alt="">
+</div>
+
+<section id="system">
     <div class="wrap">
         <div class="section-head">
             <div class="eyebrow">Our system</div>
@@ -193,7 +235,7 @@
     </div>
 </section>
 
-<section>
+<section class="alt">
     <div class="wrap">
         <div class="section-head">
             <div class="eyebrow">How it works</div>
@@ -208,7 +250,7 @@
     </div>
 </section>
 
-<section class="alt" id="contact">
+<section id="contact">
     <div class="wrap">
         <div class="section-head">
             <div class="eyebrow">Contact us</div>
@@ -231,5 +273,20 @@
     </div>
 </footer>
 
+<script>
+    (function () {
+        var box = document.getElementById('lightbox'), img = box.querySelector('img');
+        document.querySelectorAll('.fleet button').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                img.src = btn.getAttribute('data-full');
+                img.alt = btn.querySelector('img').alt;
+                box.classList.add('open');
+            });
+        });
+        function close() { box.classList.remove('open'); img.src = ''; }
+        box.addEventListener('click', function (e) { if (e.target !== img) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    })();
+</script>
 </body>
 </html>
