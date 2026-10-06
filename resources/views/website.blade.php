@@ -20,6 +20,7 @@
 <title>{{ $name }} | Timber Supply &amp; Truck Transport in Tanzania</title>
 <meta name="description" content="{{ $name }}: timber (mbao) supply from Kongowe Mzinga and truck transport across Tanzania. Call or WhatsApp {{ $phoneShow }}.">
 <link rel="icon" href="{{ asset('assets/images/logo/oppah.png') }}">
+<script>document.documentElement.classList.add('js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -30,7 +31,7 @@
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
-    body { margin: 0; font-family: Inter, system-ui, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; overflow-x: clip; }
     a { color: var(--blue); text-decoration: none; }
     img { max-width: 100%; }
     .wrap { max-width: 1160px; margin: 0 auto; padding: 0 16px; }
@@ -192,6 +193,39 @@
 
     @media (prefers-reduced-motion: reduce) { .hero-slides div { transition: none; transform: none; } .service, .fleet img { transition: none; } }
 
+    /* ---------- Scroll animations (only when JS runs and motion is allowed) ---------- */
+    html.lenis, html.lenis body { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 40; background: linear-gradient(90deg, var(--green), #8fd18a 50%, var(--blue)); transform-origin: 0 50%; transform: scaleX(0); pointer-events: none; }
+    @media (prefers-reduced-motion: no-preference) {
+        /* Fade + slide up */
+        .js [data-reveal] { opacity: 0; transform: translateY(48px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); transition-delay: calc(var(--i, 0) * 110ms); }
+        .js [data-reveal="left"] { transform: translateX(-56px); }
+        .js [data-reveal="right"] { transform: translateX(56px); }
+        .js [data-reveal="zoom"] { transform: scale(.92); }
+        @media (max-width: 960px) { .js [data-reveal="left"], .js [data-reveal="right"] { transform: translateY(48px); } }
+        .js [data-reveal].in { opacity: 1; transform: none; }
+        /* Headings: words rise out of a mask one after another */
+        .js .split .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; margin-bottom: -.08em; }
+        .js .split .w > span { display: inline-block; transform: translateY(110%); transition: transform .85s cubic-bezier(.2,.75,.2,1); transition-delay: calc(var(--i, 0) * 55ms); }
+        .js .split.in .w > span { transform: none; }
+        /* Photos: unveil from a curtain and settle from a slight zoom */
+        .js [data-unveil] { clip-path: inset(12% 12% 12% 12% round 26px); transition: clip-path 1.2s cubic-bezier(.2,.7,.2,1); }
+        .js [data-unveil].in { clip-path: inset(0 0 0 0 round 26px); }
+        .js [data-unveil] img { transform: scale(1.18); transition: transform 1.6s cubic-bezier(.2,.7,.2,1); }
+        .js [data-unveil].in img { transform: scale(1.06); }
+        /* Hero entrance on page load */
+        .js .hero-copy > * { opacity: 0; transform: translateY(30px); animation: heroIn 1s cubic-bezier(.2,.7,.2,1) forwards; }
+        .js .hero-copy > :nth-child(1) { animation-delay: .15s; }
+        .js .hero-copy > :nth-child(2) { animation-delay: .3s; }
+        .js .hero-copy > :nth-child(3) { animation-delay: .5s; }
+        .js .hero-copy > :nth-child(4) { animation-delay: .65s; }
+        .js header .wrap > * { opacity: 0; animation: heroIn .9s .1s cubic-bezier(.2,.7,.2,1) forwards; }
+        @keyframes heroIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
+        [data-parallax] { will-change: transform; }
+    }
+
     @media (max-width: 960px) {
         h1 { font-size: 40px; }
         h2 { font-size: 28px; }
@@ -223,6 +257,7 @@
 </head>
 <body>
 
+<div class="progress" aria-hidden="true"></div>
 <header id="siteHeader">
     <div class="wrap">
         <a class="brand" href="#top"><img src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo"><span>Oppah</span></a>
@@ -561,6 +596,90 @@
         function close() { box.classList.remove('open'); img.src = ''; }
         box.addEventListener('click', function (e) { if (e.target !== img) close(); });
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script>
+    // Scroll animations: smooth scrolling, reveals, word-by-word headings, parallax, progress bar.
+    (function () {
+        if (!window.matchMedia('(prefers-reduced-motion: no-preference)').matches) { return; }
+        var $ = function (sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); };
+
+        // 1. Mark what animates (kept here so the markup stays clean).
+        function mark(sel, kind) { $(sel).forEach(function (el) { el.setAttribute('data-reveal', kind || ''); }); }
+        function group(sel) { $(sel).forEach(function (wrap) { Array.prototype.forEach.call(wrap.children, function (el, i) { el.setAttribute('data-reveal', ''); el.style.setProperty('--i', i % 4); }); }); }
+        mark('.section-head .eyebrow, .section-head p, .about .eyebrow, .about p.muted');
+        group('.services'); group('.grid3'); group('.fleet'); group('.points'); group('.foot-grid'); group('.tabs');
+        mark('.panel, .staff'); mark('.info-wrap', 'left'); mark('.map', 'right'); mark('.quote .glass', 'zoom');
+        $('.about-photo').forEach(function (el) { el.setAttribute('data-unveil', ''); });
+
+        // 2. Split headings into words.
+        function split(el) {
+            var i = 0;
+            (function walk(node) {
+                Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+                    if (child.nodeType === 3) {
+                        var frag = document.createDocumentFragment();
+                        child.textContent.split(/(\s+)/).forEach(function (part) {
+                            if (!part) { return; }
+                            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); return; }
+                            var w = document.createElement('span'), inner = document.createElement('span');
+                            w.className = 'w'; inner.textContent = part; inner.style.setProperty('--i', i++);
+                            w.appendChild(inner); frag.appendChild(w);
+                        });
+                        node.replaceChild(frag, child);
+                    } else if (child.nodeType === 1) { walk(child); }
+                });
+            })(el);
+            el.classList.add('split');
+        }
+        $('section h2, .quote h2').forEach(split);
+
+        // 3. Reveal when 15% of an element enters the screen (once).
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        $('[data-reveal], .split, [data-unveil]').forEach(function (el) { io.observe(el); });
+
+        // 4. Parallax: photos drift slower than the page.
+        var layers = [];
+        $('.hero-slides').forEach(function (el) { layers.push({ el: el, speed: 0.35, hero: true }); });
+        $('.service > img, .panel .pic img').forEach(function (el) { el.style.transition = 'none'; layers.push({ el: el, speed: 0.12 }); });
+        $('.quote, .info-wrap').forEach(function (el) { layers.push({ el: el, speed: 0.15, bg: true }); });
+        var bar = document.querySelector('.progress');
+        function frame() {
+            var vh = window.innerHeight, y = window.scrollY, max = document.documentElement.scrollHeight - vh;
+            bar.style.transform = 'scaleX(' + (max > 0 ? y / max : 0) + ')';
+            layers.forEach(function (l) {
+                var r = l.el.getBoundingClientRect();
+                if (r.bottom < -100 || r.top > vh + 100) { return; }
+                if (l.hero) { l.el.style.transform = 'translate3d(0,' + (y * l.speed) + 'px,0)'; return; }
+                var off = (r.top + r.height / 2 - vh / 2) * -l.speed;
+                if (l.bg) { l.el.style.backgroundPosition = 'center calc(50% + ' + off + 'px)'; }
+                else { l.el.style.transform = 'translate3d(0,' + off + 'px,0) scale(1.12)'; }
+            });
+        }
+
+        // 5. Smooth scrolling (Lenis), with in-page links handled by it.
+        var lenis = null;
+        if (window.Lenis) {
+            lenis = new Lenis({ duration: 1.15, smoothWheel: true });
+            lenis.on('scroll', frame);
+            (function raf(t) { lenis.raf(t); requestAnimationFrame(raf); })(performance.now());
+            $('a[href^="#"]').forEach(function (a) {
+                a.addEventListener('click', function (e) {
+                    var id = a.getAttribute('href');
+                    if (id.length < 2 || !document.querySelector(id)) { return; }
+                    e.preventDefault();
+                    lenis.scrollTo(id === '#top' ? 0 : id, { offset: id === '#top' ? 0 : -72 });
+                });
+            });
+            $('.lightbox').forEach(function (el) { el.setAttribute('data-lenis-prevent', ''); });
+        } else {
+            window.addEventListener('scroll', function () { requestAnimationFrame(frame); }, { passive: true });
+        }
+        window.addEventListener('resize', frame);
+        frame();
     })();
 </script>
 </body>
