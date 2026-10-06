@@ -87,23 +87,28 @@
             </div>
         </div>
 
-        <div class="row g-2 mb-3">
-            <div class="col-md-3"><div class="card mb-0"><div class="card-body p-3">
+        <div class="row row-cols-1 row-cols-md-3 row-cols-xl-5 g-2 mb-3">
+            <div class="col"><div class="card mb-0 h-100"><div class="card-body p-3">
                 <div class="small text-muted">Invoiced value (paid + unpaid)</div>
                 <div class="fw-bold fs-5">{{ number_format($totalAmount, 0) }}</div>
                 <div class="small text-muted">{{ number_format($totalQty, 2) }} pcs on invoices</div>
             </div></div></div>
-            <div class="col-md-3"><div class="card mb-0"><div class="card-body p-3">
+            <div class="col"><div class="card mb-0 h-100"><div class="card-body p-3">
+                <div class="small text-muted">Quick sales (walk-in)</div>
+                <div class="fw-bold fs-5">{{ number_format($quickSales, 0) }}</div>
+                <div class="small text-muted">{{ number_format($quickQty, 2) }} pcs, listed as "Walk-in"</div>
+            </div></div></div>
+            <div class="col"><div class="card mb-0 h-100 border-dark"><div class="card-body p-3">
+                <div class="small text-muted">Total sales (invoiced + quick sales)</div>
+                <div class="fw-bold fs-5">{{ number_format($totalAmount + $quickSales, 0) }}</div>
+                <div class="small text-muted">{{ number_format($totalQty + $quickQty, 2) }} pcs</div>
+            </div></div></div>
+            <div class="col"><div class="card mb-0 h-100"><div class="card-body p-3">
                 <div class="small text-muted">Amount received on these invoices</div>
                 <div class="fw-bold fs-5 text-success">{{ number_format($amountReceived, 0) }}</div>
                 <div class="small text-muted">Not yet paid: {{ number_format(max($totalAmount - $amountReceived, 0), 0) }}</div>
             </div></div></div>
-            <div class="col-md-3"><div class="card mb-0"><div class="card-body p-3">
-                <div class="small text-muted">Quick sales (walk-in)</div>
-                <div class="fw-bold fs-5">{{ number_format($quickSales, 0) }}</div>
-                <div class="small text-muted">{{ number_format($quickQty, 2) }} pcs, not in the table below</div>
-            </div></div></div>
-            <div class="col-md-3"><div class="card mb-0 border-primary"><div class="card-body p-3">
+            <div class="col"><div class="card mb-0 h-100 border-primary"><div class="card-body p-3">
                 <div class="small text-muted">Total received (received + quick sales)</div>
                 <div class="fw-bold fs-5 text-primary">{{ number_format($amountReceived + $quickSales, 0) }}</div>
                 <div class="small text-muted">Matches the dashboard graph for Mzinga</div>
@@ -120,10 +125,10 @@
                                 <th>#</th>
                                 <th>Product</th>
                                 <th>Customer</th>
-                                <th>Invoice Date</th>
+                                <th>Date</th>
                                 <th>Sold Quantity</th>
                                 <th>Total Amount</th>
-                                <th>Invoice Status</th>
+                                <th>Status</th>
                                 <th>Date Paid</th>
                                 <th>Paid By</th>
                                
@@ -134,16 +139,17 @@
                             @foreach($sales as $sale)
                               <tr>
                                   <th scope="row">{{ $sales->firstItem() + $loop->index }}</th>
-                                  <td>{{ $sale->product->product_name }}</td>
-                                 
-                                  <td>{{ $sale->invoice->customer->name ?? 'N/A' }}</td>
-                                 
-                                  <td>{{ optional($sale->invoice)->invoice_date ? \Carbon\Carbon::parse($sale->invoice->invoice_date)->format('d/m/Y H:i') : '' }}</td>
+                                  <td>{{ $sale->product_name }}</td>
+                                  <td>
+                                      {{ $sale->customer ?? 'N/A' }}
+                                      @if($sale->source === 'quick') <span class="badge bg-light text-dark border">Quick sale</span> @endif
+                                  </td>
+                                  <td>{{ $sale->sold_at ? \Carbon\Carbon::parse($sale->sold_at)->format('d/m/Y H:i') : '' }}</td>
                                   <td>{{ number_format($sale->qty, 2) }}</td>
-                                  <td>{{ number_format($sale->qty * $sale->price, 2) }}</td>
-                                  <td>{{ optional($sale->invoice)->status }}</td>
-                                  <td>{{ optional($sale->invoice)->date_paid ? \Carbon\Carbon::parse($sale->invoice->date_paid)->format('d/m/Y H:i') : '' }}</td>
-                                  <td>{{ optional($sale->invoice)->paid_by }}</td>
+                                  <td>{{ number_format($sale->amount, 2) }}</td>
+                                  <td>{{ $sale->status }}</td>
+                                  <td>{{ $sale->date_paid ? \Carbon\Carbon::parse($sale->date_paid)->format('d/m/Y H:i') : '' }}</td>
+                                  <td>{{ $sale->paid_by }}</td>
 
                                  
                                   
@@ -152,10 +158,9 @@
                             @endforeach
                             <tfoot>
         <tr>
-            <td colspan="4"><strong>Total ({{ $sales->total() }} items)</strong></td>
-            <td><strong>{{ $totalQty }}</strong></td>
-            
-            <td><strong>{{ number_format($totalAmount, 2) }} TZS</strong></td>
+            <td colspan="4"><strong>Total ({{ $sales->total() }} rows)</strong></td>
+            <td><strong>{{ number_format($totalQty + $quickQty, 2) }}</strong></td>
+            <td><strong>{{ number_format($totalAmount + $quickSales, 2) }} TZS</strong></td>
         </tr>
     </tfoot>
                         </tbody>

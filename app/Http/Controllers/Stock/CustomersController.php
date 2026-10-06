@@ -232,11 +232,12 @@ if ($request->filled('product_name')) {
        
     }
     /**
-     * Sales report (invoice items). Totals are split so they can be checked
-     * against the dashboard graph:
-     *  - Invoiced value  = qty x price of the listed items (paid or not)
+     * Sales report: invoice items plus quick (walk-in) sales in one list.
+     * Totals are split so they can be checked against the dashboard graph:
+     *  - Invoiced value  = qty x price of invoice items (paid or not)
+     *  - Quick sales     = walk-in sales (customer shown as "Walk-in")
+     *  - Total sales     = invoiced value + quick sales
      *  - Amount received = amount_paid on the matching invoices
-     *  - Quick sales     = walk-in sales (not on invoices)
      * For the Mzinga store, "Amount received + Quick sales" equals the
      * dashboard Payment Trends sales for the same dates.
      */
@@ -258,46 +259,82 @@ if ($request->filled('product_name')) {
         };
         $productFilter = fn ($q) => $q->where('product_name', 'like', '%'.$request->product_name.'%');
 
-        $query = InvoiceItem::with(['product', 'invoice.customer'])
+        $items = InvoiceItem::query()
             ->whereHas('invoice', $invoiceFilter)
             ->when($request->filled('product_name'), fn ($q) => $q->whereHas('product', $productFilter));
 
+        // Walk-in sales are always paid and have no customer, so they only
+        // count with no status filter / "Paid", and when a customer search
+        // (if any) matches "Walk-in".
+        $customerSearch = trim((string) $request->input('customer_name'));
+        $withQuick = in_array($request->input('status'), [null, '', 'Paid'], true)
+            && ($customerSearch === '' || stripos(self::WALK_IN_NAME, $customerSearch) !== false);
+
+        $quick = DB::table('sales as s')
+            ->join('products as p', 'p.id', '=', 's.product_id')
+            ->where('s.customer_id', QuickSale::WALK_IN_CUSTOMER)
+            ->whereIn('s.status', QuickSale::SOLD_STATUSES)
+            ->when(!$withQuick, fn ($q) => $q->whereRaw('1 = 0'))
+            ->when($companyId != 1, fn ($q) => $q->where('s.company_id', $companyId))
+            ->when($from, fn ($q) => $q->whereBetween('s.date_sold', [$from, $to]))
+            ->when($storeId, fn ($q) => $q->where('p.store_id', $storeId))
+            ->when($request->filled('product_name'), fn ($q) => $q->where('p.product_name', 'like', '%'.$request->product_name.'%'));
+
+        $rows = DB::query()->fromSub($this->salesReportRows(clone $items, $quick), 'r');
+
         if ($request->input('export') === 'csv') {
-            return $this->salesReportCsv((clone $query)->orderBy('id', 'desc'));
+            return $this->salesReportCsv((clone $rows)->orderByDesc('sold_at')->orderByDesc('id'));
         }
 
-        $totalQty = (clone $query)->sum('qty');
-        $totalAmount = (clone $query)->selectRaw('SUM(qty * price) as total')->value('total');
+        $totalAmount = (clone $items)->selectRaw('COALESCE(SUM(qty * price), 0) as total')->value('total');
+        $totalQty = (clone $items)->sum('qty');
+        $quickTotals = (clone $quick)->selectRaw('COALESCE(SUM(s.selling_price * s.quantity), 0) as amount, COALESCE(SUM(s.quantity), 0) as qty')->first();
+        $quickSales = (float) $quickTotals->amount;
+        $quickQty = (float) $quickTotals->qty;
 
         $amountReceived = Invoice::where($invoiceFilter)
             ->when($request->filled('product_name'), fn ($q) => $q->whereHas('invoice_items.product', $productFilter))
             ->sum('amount_paid');
 
-        // Walk-in sales are always paid and have no customer, so they only
-        // count when no customer / non-paid status filter is chosen.
-        $quickSales = 0;
-        $quickQty = 0;
-        if (!$request->filled('customer_name') && in_array($request->input('status'), [null, '', 'Paid'], true)) {
-            $quick = DB::table('sales as s')
-                ->join('products as p', 'p.id', '=', 's.product_id')
-                ->where('s.customer_id', QuickSale::WALK_IN_CUSTOMER)
-                ->whereIn('s.status', QuickSale::SOLD_STATUSES)
-                ->when($companyId != 1, fn ($q) => $q->where('s.company_id', $companyId))
-                ->when($from, fn ($q) => $q->whereBetween('s.date_sold', [$from, $to]))
-                ->when($storeId, fn ($q) => $q->where('p.store_id', $storeId))
-                ->when($request->filled('product_name'), fn ($q) => $q->where('p.product_name', 'like', '%'.$request->product_name.'%'))
-                ->selectRaw('COALESCE(SUM(s.selling_price * s.quantity), 0) as amount, COALESCE(SUM(s.quantity), 0) as qty')
-                ->first();
-            $quickSales = (float) $quick->amount;
-            $quickQty = (float) $quick->qty;
-        }
-
-        $sales = $query->orderBy('id', 'desc')->paginate(50)->withQueryString();
+        $sales = $rows->orderByDesc('sold_at')->orderByDesc('id')->paginate(50)->withQueryString();
         $stores = Store::orderBy('name')->get(['id', 'name']);
 
         return view('admin.sales_management.sales-report', compact(
             'sales', 'totalQty', 'totalAmount', 'amountReceived', 'quickSales', 'quickQty', 'stores', 'storeId'
         ));
+    }
+
+    const WALK_IN_NAME = 'Walk-in';
+
+    // Invoice items and quick sales as one row shape, for the list and the CSV.
+    private function salesReportRows($items, $quick)
+    {
+        $invoiceRows = $items->toBase()
+            ->join('invoices as inv', 'inv.id', '=', 'invoice_items.invoice_id')
+            ->leftJoin('products as ip', 'ip.id', '=', 'invoice_items.product_id')
+            ->leftJoin('customers as c', 'c.id', '=', 'inv.customer_id')
+            ->leftJoin('stores as ist', 'ist.id', '=', 'c.store_id')
+            ->select([
+                DB::raw("'invoice' as source"), 'invoice_items.id as id', 'inv.id as invoice_id',
+                'ip.product_name as product_name', 'c.name as customer', 'ist.name as store',
+                'inv.invoice_date as sold_at', 'invoice_items.qty as qty', 'invoice_items.price as price',
+                DB::raw('invoice_items.qty * invoice_items.price as amount'),
+                'inv.status as status', 'inv.date_paid as date_paid', 'inv.paid_by as paid_by',
+            ]);
+
+        $quickRows = (clone $quick)
+            ->leftJoin('stores as qst', 'qst.id', '=', 'p.store_id')
+            ->leftJoin('users as u', 'u.id', '=', 's.sold_by')
+            ->select([
+                DB::raw("'quick' as source"), 's.id as id', DB::raw('NULL as invoice_id'),
+                'p.product_name as product_name', DB::raw("'".self::WALK_IN_NAME."' as customer"), 'qst.name as store',
+                's.date_sold as sold_at', 's.quantity as qty', 's.selling_price as price',
+                DB::raw('s.quantity * s.selling_price as amount'),
+                DB::raw("'Paid' as status"), 's.date_sold as date_paid',
+                DB::raw("TRIM(CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, ''))) as paid_by"),
+            ]);
+
+        return $invoiceRows->unionAll($quickRows);
     }
 
     // Date range from either the date pair or the month pair (dates win).
@@ -317,25 +354,13 @@ if ($request->filled('product_name')) {
     {
         return response()->streamDownload(function () use ($query) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Invoice No', 'Product', 'Customer', 'Store', 'Invoice Date', 'Quantity', 'Price', 'Total Amount', 'Invoice Status', 'Date Paid', 'Paid By']);
-            $query->chunk(500, function ($items) use ($out) {
-                foreach ($items as $item) {
-                    $invoice = $item->invoice;
-                    fputcsv($out, [
-                        $item->invoice_id,
-                        optional($item->product)->product_name,
-                        optional(optional($invoice)->customer)->name,
-                        optional(optional(optional($invoice)->customer)->store)->name,
-                        optional($invoice)->invoice_date,
-                        $item->qty,
-                        $item->price,
-                        $item->qty * $item->price,
-                        optional($invoice)->status,
-                        optional($invoice)->date_paid,
-                        optional($invoice)->paid_by,
-                    ]);
-                }
-            });
+            fputcsv($out, ['Type', 'Invoice No', 'Product', 'Customer', 'Store', 'Date', 'Quantity', 'Price', 'Total Amount', 'Status', 'Date Paid', 'Paid By']);
+            foreach ($query->cursor() as $row) {
+                fputcsv($out, [
+                    $row->source === 'quick' ? 'Quick sale' : 'Invoice', $row->invoice_id, $row->product_name, $row->customer, $row->store,
+                    $row->sold_at, $row->qty, $row->price, $row->amount, $row->status, $row->date_paid, $row->paid_by,
+                ]);
+            }
             fclose($out);
         }, 'sales-report-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv']);
     }
