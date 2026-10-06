@@ -6,6 +6,7 @@
     $phoneShow = '+255 '.implode(' ', str_split(substr($phoneDigits, 3), 3));
     $email = optional($company)->email_address ?: 'info@oppah01.co.tz';
     $location = 'Kongowe Mzinga, Dar es Salaam';
+    // Map pin: replace with the yard's exact coordinates ("lat,lng") once known.
     $mapQuery = rawurlencode('Mzinga, Kongowe, Dar es Salaam, Tanzania');
     // WhatsApp link with a ready-made message.
     $wa = fn ($text) => 'https://wa.me/'.$phoneDigits.'?text='.rawurlencode($text);
@@ -50,22 +51,33 @@
     .btn .arrow { display: grid; place-items: center; width: 28px; height: 28px; margin-right: -12px; border-radius: 50%; background: #fff; color: var(--blue); font-size: 15px; }
     .btn-sm { padding: 8px 16px; font-size: 14px; }
 
-    /* Header: transparent over the hero, solid once scrolled */
-    header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; transition: background .25s, box-shadow .25s; }
-    header .wrap { display: flex; align-items: center; justify-content: space-between; height: var(--head); gap: 12px; }
-    header.solid { background: rgba(255,255,255,.97); box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+    /* Glass: see-through panel, strong blur, thin bright gradient edge */
+    .glass { position: relative; background: rgba(255,255,255,.12); -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%); box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+    .glass::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+        background: linear-gradient(135deg, rgba(255,255,255,.65), rgba(255,255,255,.08) 40%, rgba(255,255,255,.08) 60%, rgba(255,255,255,.45));
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+    .glass-dark { background: rgba(15,26,40,.45); }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+        .glass { background: rgba(15,26,40,.82); }
+    }
+    .btn-glass { color: #fff; border-radius: 999px; }
+    .btn-glass:hover { background: rgba(255,255,255,.22); }
+
+    /* Header: logo + floating glass menu bar + glass login, over every section */
+    header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; padding-top: 14px; pointer-events: none; }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; height: 58px; gap: 12px; }
+    header .wrap > * { pointer-events: auto; }
     .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: #fff; }
-    .brand img { height: 46px; background: #fff; border-radius: 10px; padding: 3px 6px; }
-    header.solid .brand { color: var(--ink); }
-    nav { display: flex; align-items: center; gap: 24px; }
-    nav a { color: rgba(255,255,255,.9); font-weight: 500; font-size: 15px; }
-    nav a:hover { color: #fff; }
-    header.solid nav a { color: var(--muted); }
-    header.solid nav a:hover { color: var(--blue); }
-    nav a.btn, header.solid nav a.btn { color: #fff; }
-    .head-right { display: none; align-items: center; gap: 8px; }
-    .menu-btn { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.5); border-radius: 10px; width: 44px; height: 42px; font-size: 20px; color: #fff; cursor: pointer; }
-    header.solid .menu-btn { background: none; border-color: var(--line); color: var(--ink); }
+    .brand img { height: 48px; background: #fff; border-radius: 14px; padding: 4px 8px; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+    .brand span { text-shadow: 0 1px 8px rgba(0,0,0,.4); }
+    nav { display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px; transition: background .25s; }
+    nav a { color: #fff; font-weight: 500; font-size: 15px; padding: 9px 16px; border-radius: 999px; transition: background .2s; }
+    nav a:hover, nav a.active { background: rgba(0,0,0,.35); color: #fff; }
+    header.solid nav, header.solid .login-pill, header.solid .menu-btn { background: rgba(15,26,40,.62); }
+    header.solid .brand span { color: var(--ink); text-shadow: none; }
+    .login-pill { padding: 6px 6px 6px 18px; font-size: 15px; }
+    .head-right { display: flex; align-items: center; gap: 8px; }
+    .menu-btn { display: none; width: 48px; height: 48px; border: 0; border-radius: 50%; font-size: 20px; color: #fff; cursor: pointer; }
 
     /* Hero */
     .hero { position: relative; overflow: hidden; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: calc(var(--head) + 40px) 0 90px; background: var(--night); color: #fff; }
@@ -79,6 +91,12 @@
     .hero h1 span { color: #f2b56b; }
     .hero .lead { font-size: 19px; color: rgba(255,255,255,.88); max-width: 560px; margin: 0; }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+    .hero .wrap.hero-grid { display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: end; }
+    .hero-card { width: 320px; border-radius: 26px; padding: 22px 24px; color: #fff; }
+    .hero-card h3 { font-size: 16px; margin: 0 0 12px; }
+    .hero-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+    .hero-card li { display: flex; gap: 12px; align-items: center; font-size: 15px; }
+    .hero-card .ic { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.18); font-size: 16px; }
     .hero-dots { position: absolute; z-index: 2; left: 0; right: 0; bottom: 28px; display: flex; justify-content: center; gap: 8px; }
     .hero-dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,.45); cursor: pointer; }
     .hero-dots button.on { background: #fff; width: 26px; border-radius: 5px; }
@@ -100,16 +118,17 @@
     .points li { display: flex; gap: 12px; align-items: flex-start; }
     .points .tick { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--green-soft); color: var(--green); display: grid; place-items: center; font-weight: 800; font-size: 14px; margin-top: 1px; }
 
-    /* Services */
+    /* Services: full photo cards with a glass panel at the bottom */
     .services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
-    .service { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); display: flex; flex-direction: column; transition: transform .2s, box-shadow .2s; }
-    .service:hover { transform: translateY(-4px); box-shadow: 0 18px 36px rgba(15,26,40,.1); }
-    .service .pic { aspect-ratio: 16 / 10; overflow: hidden; }
-    .service .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .service .body { padding: 22px 22px 24px; display: flex; flex-direction: column; flex: 1; }
-    .service p { color: var(--muted); margin: 0 0 16px; flex: 1; }
-    .service .more { font-weight: 600; color: var(--blue); }
-    .service .more:hover { text-decoration: underline; }
+    .service { position: relative; border-radius: 26px; overflow: hidden; min-height: 460px; display: flex; align-items: flex-end; padding: 14px; color: #fff; background: var(--night); }
+    .service > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .5s; }
+    .service::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 35%, rgba(15,26,40,.55)); }
+    .service:hover > img { transform: scale(1.05); }
+    .service .body { position: relative; z-index: 1; border-radius: 20px; padding: 20px; width: 100%; }
+    .service h3 { color: #fff; }
+    .service p { color: rgba(255,255,255,.88); margin: 0 0 14px; font-size: 15px; }
+    .service .more { color: #fff; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; }
+    .service .more .arrow { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #fff; color: var(--ink); font-size: 14px; }
 
     /* Customers we serve (tabs) */
     .tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
@@ -145,17 +164,20 @@
 
     /* Find us */
     .findus { display: grid; grid-template-columns: .8fr 1.2fr; gap: 28px; align-items: stretch; }
-    .info-card { background: var(--night); color: #fff; border-radius: 18px; padding: 32px; display: flex; flex-direction: column; gap: 18px; }
+    .info-wrap { position: relative; border-radius: 26px; overflow: hidden; padding: 14px; display: flex; background: var(--night) center / cover no-repeat; }
+    .info-card { position: relative; z-index: 1; flex: 1; color: #fff; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 18px; }
     .info-card .row strong { display: block; color: #8fd18a; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
     .info-card a { color: #fff; }
     .info-card .row span, .info-card .row a { font-size: 17px; }
-    .map { border-radius: 18px; overflow: hidden; min-height: 380px; border: 1px solid var(--line); background: var(--soft); }
+    .map { border-radius: 26px; overflow: hidden; min-height: 380px; border: 1px solid var(--line); background: var(--soft); }
     .map iframe { width: 100%; height: 100%; min-height: 380px; border: 0; display: block; }
 
-    /* Quote band + staff band */
-    .quote { background: linear-gradient(120deg, var(--blue-dark), var(--blue)); color: #fff; border-radius: 22px; padding: 44px; display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
-    .quote h2 { margin: 0 0 6px; }
-    .quote p { margin: 0; color: rgba(255,255,255,.88); max-width: 560px; }
+    /* Quote band: truck photo with a glass card on top */
+    .quote { position: relative; border-radius: 30px; overflow: hidden; min-height: 420px; display: flex; align-items: center; justify-content: flex-end; padding: 32px; color: #fff; background: var(--night) center 55% / cover no-repeat; }
+    .quote::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(15,26,40,.1), rgba(15,26,40,.45)); }
+    .quote .glass { z-index: 1; max-width: 520px; border-radius: 26px; padding: 32px; }
+    .quote h2 { margin: 0 0 10px; color: #fff; }
+    .quote p { margin: 0; color: rgba(255,255,255,.9); }
     .staff { margin-top: 22px; border: 1px solid var(--line); border-radius: 18px; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
     .staff p { margin: 0; color: var(--muted); }
 
@@ -187,20 +209,22 @@
         .fleet { grid-template-columns: repeat(2, 1fr); }
         .foot-grid { grid-template-columns: 1fr 1fr; }
         .hero::after { background: linear-gradient(180deg, rgba(15,26,40,.6) 0%, rgba(15,26,40,.88) 100%); }
-        .head-right { display: flex; }
-        nav { display: none; position: absolute; top: var(--head); left: 0; right: 0; background: #fff; box-shadow: 0 12px 24px rgba(0,0,0,.12); padding: 6px 16px 12px; flex-direction: column; align-items: stretch; gap: 0; }
-        nav.open { display: flex; }
-        nav a, header.solid nav a { color: var(--ink); display: block; padding: 13px 4px; border-bottom: 1px solid var(--line); font-size: 16px; }
-        nav a:last-child { border-bottom: 0; }
-        nav a.nav-login { display: none; }
+        .menu-btn { display: block; }
+        .hero .wrap.hero-grid { grid-template-columns: 1fr; }
+        .hero-card { display: none; }
+        .service { min-height: 420px; }
+        .quote { justify-content: center; min-height: 0; padding: 16px; }
+        nav#siteNav { display: none; position: absolute; top: 80px; left: 16px; right: 16px; flex-direction: column; align-items: stretch; gap: 2px; padding: 10px; border-radius: 24px; background: rgba(15,26,40,.72); }
+        nav#siteNav.open { display: flex; }
+        nav a { padding: 13px 16px; font-size: 16px; }
     }
     @media (max-width: 600px) {
         h1 { font-size: 32px; }
         .hero { padding-bottom: 80px; }
         .hero .lead { font-size: 17px; }
         .services, .grid3, .foot-grid { grid-template-columns: 1fr; }
-        .panel, .quote, .info-card { padding: 24px; }
-        .brand span { display: none; }
+        .panel, .info-card, .quote .glass { padding: 24px; }
+        .brand span, .login-pill .label-long { display: none; }
         .actions .btn { flex: 1 1 auto; justify-content: center; }
     }
 </style>
@@ -210,17 +234,16 @@
 <header id="siteHeader">
     <div class="wrap">
         <a class="brand" href="#top"><img src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo"><span>Oppah</span></a>
-        <nav id="siteNav">
+        <nav id="siteNav" class="glass">
             <a href="#about">About us</a>
             <a href="#services">Services</a>
             <a href="#customers">Who we serve</a>
             <a href="#fleet">Our fleet</a>
             <a href="#findus">Find us</a>
-            <a class="btn btn-primary btn-sm nav-login" href="{{ route('login') }}" target="_top">Staff login</a>
         </nav>
         <div class="head-right">
-            <a class="btn btn-primary btn-sm" href="{{ route('login') }}" target="_top">Staff login</a>
-            <button type="button" class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav">&#9776;</button>
+            <a class="btn btn-glass glass login-pill" href="{{ route('login') }}" target="_top"><span>Staff<span class="label-long"> login</span></span><span class="arrow">&rarr;</span></a>
+            <button type="button" class="menu-btn glass" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav">&#9776;</button>
         </div>
     </div>
 </header>
@@ -232,15 +255,24 @@
             <div class="{{ $i === 0 ? 'on' : '' }}" @if($i === 0) style="background-image:url('{{ $img($slide) }}')" @else data-bg="{{ $img($slide) }}" @endif></div>
         @endforeach
     </div>
-    <div class="wrap">
+    <div class="wrap hero-grid">
         <div class="hero-copy">
             <div class="eyebrow">Kongowe Mzinga &middot; Dar es Salaam</div>
             <h1>Timber you can build on. <span>Trucks you can count on.</span></h1>
             <p class="lead">We supply quality timber (mbao) and move it, and your cargo, with our own Scania fleet across Tanzania.</p>
             <div class="actions">
                 <a class="btn btn-wa" href="{{ $wa('Hello Oppah, I would like a quote for ') }}" target="_blank" rel="noopener">WhatsApp for a quote</a>
-                <a class="btn btn-light" href="#services">Our services <span class="arrow">&rarr;</span></a>
+                <a class="btn btn-glass glass" href="#services">Our services <span class="arrow">&rarr;</span></a>
             </div>
+        </div>
+        <div class="hero-card glass">
+            <h3>Why customers choose Oppah</h3>
+            <ul>
+                <li><span class="ic">&#129717;</span>Timber from our own yard</li>
+                <li><span class="ic">&#128667;</span>Our own Scania trucks</li>
+                <li><span class="ic">&#128205;</span>Every trip followed</li>
+                <li><span class="ic">&#129534;</span>Proper invoices &amp; receipts</li>
+            </ul>
         </div>
     </div>
     <div class="hero-dots">
@@ -279,27 +311,27 @@
         </div>
         <div class="services">
             <article class="service">
-                <div class="pic"><img src="{{ $img('truck-4') }}" alt="Oppah truck loaded with timber" loading="lazy"></div>
-                <div class="body">
+                <img src="{{ $img('truck-4') }}" alt="Oppah truck loaded with timber" loading="lazy">
+                <div class="body glass">
                     <h3>Timber supply (Mbao)</h3>
-                    <p>Sawn timber for construction, roofing, formwork and furniture, sold from our yard at Kongowe Mzinga. Cash or credit, always with a proper invoice.</p>
-                    <a class="more" href="{{ $wa('Hello Oppah, I want to buy timber. Sizes and quantity: ') }}" target="_blank" rel="noopener">Ask for timber prices &rarr;</a>
+                    <p>Sawn timber for construction, roofing, formwork and furniture, from our yard at Kongowe Mzinga. Cash or credit, always invoiced.</p>
+                    <a class="more" href="{{ $wa('Hello Oppah, I want to buy timber. Sizes and quantity: ') }}" target="_blank" rel="noopener">Ask for timber prices <span class="arrow">&rarr;</span></a>
                 </div>
             </article>
             <article class="service">
-                <div class="pic"><img src="{{ $img('truck-6') }}" alt="Oppah truck carrying cargo" loading="lazy"></div>
-                <div class="body">
+                <img src="{{ $img('truck-6') }}" alt="Oppah truck carrying cargo" loading="lazy">
+                <div class="body glass">
                     <h3>Truck hire &amp; transport</h3>
-                    <p>Our trucks carry timber and general cargo, short and long distance. Each trip is planned, costed and followed by our office.</p>
-                    <a class="more" href="{{ $wa('Hello Oppah, I need a truck. From: ... To: ... Cargo: ...') }}" target="_blank" rel="noopener">Book a truck &rarr;</a>
+                    <p>Our trucks carry timber and general cargo, short and long distance, with every trip planned and followed by our office.</p>
+                    <a class="more" href="{{ $wa('Hello Oppah, I need a truck. From: ... To: ... Cargo: ...') }}" target="_blank" rel="noopener">Book a truck <span class="arrow">&rarr;</span></a>
                 </div>
             </article>
             <article class="service">
-                <div class="pic"><img src="{{ $img('truck-1') }}" alt="Oppah Scania truck ready for delivery" loading="lazy"></div>
-                <div class="body">
+                <img src="{{ $img('truck-1') }}" alt="Oppah Scania truck ready for delivery" loading="lazy">
+                <div class="body glass">
                     <h3>Delivery to your site</h3>
-                    <p>Buy your timber and we bring it to your building site, workshop or shop with our own truck, so you don't have to arrange transport.</p>
-                    <a class="more" href="{{ $wa('Hello Oppah, I want timber delivered to: ') }}" target="_blank" rel="noopener">Arrange a delivery &rarr;</a>
+                    <p>Buy your timber and we bring it to your site, workshop or shop with our own truck. No need to find transport.</p>
+                    <a class="more" href="{{ $wa('Hello Oppah, I want timber delivered to: ') }}" target="_blank" rel="noopener">Arrange a delivery <span class="arrow">&rarr;</span></a>
                 </div>
             </article>
         </div>
@@ -394,14 +426,16 @@
             <p>Come and see the timber, or call us and we will bring it to you.</p>
         </div>
         <div class="findus">
-            <div class="info-card">
+            <div class="info-wrap" style="background-image:url('{{ $img('truck-5') }}')">
+            <div class="info-card glass glass-dark">
                 <div class="row"><strong>Location</strong><span>{{ $location }}</span></div>
                 <div class="row"><strong>Phone &amp; WhatsApp</strong><a href="tel:{{ $phoneIntl }}">{{ $phoneShow }}</a></div>
                 <div class="row"><strong>Email</strong><a href="mailto:{{ $email }}">{{ $email }}</a></div>
                 <div class="actions" style="margin-top:auto">
                     <a class="btn btn-wa btn-sm" href="{{ $wa('Hello Oppah, how do I get to your yard at Kongowe Mzinga?') }}" target="_blank" rel="noopener">WhatsApp us</a>
-                    <a class="btn btn-light btn-sm" href="https://www.google.com/maps/search/?api=1&query={{ $mapQuery }}" target="_blank" rel="noopener">Open in Google Maps</a>
+                    <a class="btn btn-glass glass btn-sm" href="https://www.google.com/maps/search/?api=1&query={{ $mapQuery }}" target="_blank" rel="noopener">Open in Google Maps</a>
                 </div>
+            </div>
             </div>
             <div class="map">
                 <iframe src="https://www.google.com/maps?q={{ $mapQuery }}&z=14&output=embed" title="Map: {{ $location }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -412,14 +446,14 @@
 
 <section id="contact">
     <div class="wrap">
-        <div class="quote">
-            <div>
+        <div class="quote" style="background-image:url('{{ $img('truck-3') }}')">
+            <div class="glass">
                 <h2>Need timber or a truck this week?</h2>
                 <p>Send us the sizes, the quantity or the route. We reply with a price and a delivery time.</p>
-            </div>
-            <div class="actions" style="margin-top:0">
-                <a class="btn btn-wa" href="{{ $wa('Hello Oppah, I would like a quote for ') }}" target="_blank" rel="noopener">WhatsApp for a quote</a>
-                <a class="btn btn-light" href="tel:{{ $phoneIntl }}">Call {{ $phoneShow }}</a>
+                <div class="actions" style="margin-top:22px">
+                    <a class="btn btn-wa" href="{{ $wa('Hello Oppah, I would like a quote for ') }}" target="_blank" rel="noopener">WhatsApp for a quote</a>
+                    <a class="btn btn-glass glass" href="tel:{{ $phoneIntl }}">Call {{ $phoneShow }}</a>
+                </div>
             </div>
         </div>
         <div class="staff">
