@@ -38,16 +38,27 @@
     .btn-ghost { border: 1.5px solid var(--blue); color: var(--blue); }
     nav .btn { margin-left: 22px; padding: 8px 16px; color: #fff; }
 
-    .hero { background: linear-gradient(135deg, var(--soft) 0%, #fff 60%, var(--green-soft) 100%); padding: 80px 0 72px; }
-    .hero .wrap { display: grid; grid-template-columns: 1.2fr .8fr; gap: 48px; align-items: center; }
+    .hero { position: relative; overflow: hidden; min-height: 620px; display: flex; align-items: center; padding: 96px 0 88px; background: #1d2733; color: #fff; }
+    .hero .wrap { position: relative; z-index: 2; width: 100%; }
+    .hero-copy { max-width: 640px; }
+    .hero-slides { position: absolute; inset: 0; z-index: 0; }
+    .hero-slides div { position: absolute; inset: 0; background-size: cover; background-position: center 40%; opacity: 0; transform: scale(1.06); transition: opacity 1.2s ease, transform 7s ease; }
+    .hero-slides div.on { opacity: 1; transform: scale(1); }
+    .hero::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(14,24,38,.88) 0%, rgba(14,24,38,.62) 50%, rgba(14,24,38,.15) 100%); }
+    .hero .eyebrow { color: #8fd18a; }
+    .hero h1 span { color: #9fc0ef; }
+    .hero .lead { color: rgba(255,255,255,.88); }
+    .hero .btn-ghost { border-color: #fff; color: #fff; }
+    .hero .btn-ghost:hover { background: rgba(255,255,255,.12); }
+    .hero-dots { position: absolute; z-index: 2; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; gap: 8px; }
+    .hero-dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,.45); cursor: pointer; }
+    .hero-dots button.on { background: #fff; width: 26px; border-radius: 5px; }
+    @media (prefers-reduced-motion: reduce) { .hero-slides div { transition: none; transform: none; } }
     .eyebrow { color: var(--green); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
     h1 { font-size: 46px; line-height: 1.1; margin: 10px 0 18px; letter-spacing: -.02em; }
     h1 span { color: var(--blue); }
     .lead { font-size: 18px; color: var(--muted); max-width: 560px; }
     .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
-    .hero-photo { position: relative; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(47,79,127,.18); aspect-ratio: 3 / 4; max-height: 520px; margin-left: auto; }
-    .hero-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .hero-photo figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 18px; color: #fff; font-weight: 600; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
 
     .fleet { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
     .fleet button { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 12px; overflow: hidden; aspect-ratio: 3 / 4; display: block; }
@@ -101,17 +112,18 @@
     footer a { color: #fff; }
 
     @media (max-width: 900px) {
-        .hero .wrap, .split { grid-template-columns: 1fr; }
+        .split { grid-template-columns: 1fr; }
+        .hero { min-height: 520px; }
+        .hero::after { background: linear-gradient(180deg, rgba(14,24,38,.55) 0%, rgba(14,24,38,.85) 100%); }
         .grid3, .contact { grid-template-columns: 1fr 1fr; }
         .fleet { grid-template-columns: repeat(2, 1fr); }
-        .hero-photo { margin: 0 auto; max-width: 420px; }
         .steps { grid-template-columns: 1fr 1fr; row-gap: 28px; }
         h1 { font-size: 36px; }
         nav a:not(.btn) { display: none; }
     }
     @media (max-width: 560px) {
         .grid3, .contact, .steps { grid-template-columns: 1fr; }
-        .hero { padding: 48px 0; }
+        .hero { padding: 64px 0 72px; min-height: 480px; }
         h1 { font-size: 30px; }
         section { padding: 52px 0; }
         .brand span { display: none; }
@@ -133,9 +145,15 @@
     </div>
 </header>
 
+@php($slides = ['truck-2', 'truck-1', 'truck-3', 'truck-5', 'truck-4', 'truck-6'])
 <div class="hero" id="top">
+    <div class="hero-slides" aria-hidden="true">
+        @foreach($slides as $i => $slide)
+            <div class="{{ $i === 0 ? 'on' : '' }}" @if($i === 0) style="background-image:url('{{ route('website-img', $slide.'.jpg') }}')" @else data-bg="{{ route('website-img', $slide.'.jpg') }}" @endif></div>
+        @endforeach
+    </div>
     <div class="wrap">
-        <div>
+        <div class="hero-copy">
             <div class="eyebrow">Timber supply &middot; Truck logistics</div>
             <h1>Quality timber, <span>delivered by our own trucks</span>.</h1>
             <p class="lead">{{ $name }} supplies timber (mbao) to builders, carpenters and businesses, and runs a fleet of trucks that moves goods across Tanzania. One company, one team, one system.</p>
@@ -144,10 +162,11 @@
                 <a class="btn btn-ghost" href="#business">See what we do</a>
             </div>
         </div>
-        <figure class="hero-photo">
-            <img src="{{ asset('assets/images/website/truck-2.jpg') }}" alt="Oppah Scania truck loaded with timber">
-            <figcaption>Our trucks, our timber, delivered</figcaption>
-        </figure>
+    </div>
+    <div class="hero-dots">
+        @foreach($slides as $i => $slide)
+            <button type="button" class="{{ $i === 0 ? 'on' : '' }}" aria-label="Show photo {{ $i + 1 }}"></button>
+        @endforeach
     </div>
 </div>
 
@@ -201,8 +220,8 @@
                 ['truck-6', 'Oppah truck on a village road'],
                 ['truck-7', 'Oppah truck being prepared for a trip'],
             ] as [$file, $alt])
-                <button type="button" data-full="{{ asset('assets/images/website/'.$file.'.jpg') }}" aria-label="View larger: {{ $alt }}">
-                    <img src="{{ asset('assets/images/website/'.$file.'.jpg') }}" alt="{{ $alt }}" loading="lazy">
+                <button type="button" data-full="{{ route('website-img', $file.'.jpg') }}" aria-label="View larger: {{ $alt }}">
+                    <img src="{{ route('website-img', $file.'.jpg') }}" alt="{{ $alt }}" loading="lazy">
                 </button>
             @endforeach
         </div>
@@ -274,6 +293,22 @@
 </footer>
 
 <script>
+    // Hero background carousel: crossfade every 5 s, pause when the tab is hidden.
+    (function () {
+        var slides = document.querySelectorAll('.hero-slides div'), dots = document.querySelectorAll('.hero-dots button');
+        var current = 0, timer = null, still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        slides.forEach(function (s) { var bg = s.getAttribute('data-bg'); if (bg) { s.style.backgroundImage = "url('" + bg + "')"; } });
+        function show(n) {
+            slides[current].classList.remove('on'); dots[current].classList.remove('on');
+            current = (n + slides.length) % slides.length;
+            slides[current].classList.add('on'); dots[current].classList.add('on');
+        }
+        function start() { if (!still) { clearInterval(timer); timer = setInterval(function () { show(current + 1); }, 5000); } }
+        dots.forEach(function (d, i) { d.addEventListener('click', function () { show(i); start(); }); });
+        document.addEventListener('visibilitychange', function () { document.hidden ? clearInterval(timer) : start(); });
+        start();
+    })();
+
     (function () {
         var box = document.getElementById('lightbox'), img = box.querySelector('img');
         document.querySelectorAll('.fleet button').forEach(function (btn) {

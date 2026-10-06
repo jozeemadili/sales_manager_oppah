@@ -55,6 +55,14 @@ Route::get('/how-to-use', [PortalUsersController::class, 'howToUse'])->name('how
 Route::get('/website', function () {
     return view('website', ['company' => \App\Models\Company::find(1)]);
 })->name('website');
+// Website photos. Served from public/ through PHP because on cPanel /assets/
+// points at a separate copy of the assets folder that git pulls do not update.
+Route::get('/website/img/{file}', function ($file) {
+    $path = public_path('assets/images/website/'.$file);
+    abort_unless(is_file($path), 404);
+
+    return response()->file($path, ['Cache-Control' => 'public, max-age=604800']);
+})->where('file', 'truck-[0-9]+\\.jpg')->name('website-img');
 Route::get('/{id}',[InvoiceController::class, 'download'])->name('free-quotation-download');
 Route::get('/l/{id}',[LogisticsController::class, 'download'])->name('free-ledger-download');
 // Customer statement opened from the QR code on a printed payment reminder (signed, no login)
