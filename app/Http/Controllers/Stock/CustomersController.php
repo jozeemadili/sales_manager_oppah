@@ -8,6 +8,9 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Sale;
+use App\Models\Store;
+use App\Http\Livewire\SalesManagement\QuickSale;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Route;
@@ -228,58 +231,113 @@ if ($request->filled('product_name')) {
             return view('admin.sales_management.invoice-reports',['Invoice' => $Invoice]);
        
     }
+    /**
+     * Sales report (invoice items). Totals are split so they can be checked
+     * against the dashboard graph:
+     *  - Invoiced value  = qty x price of the listed items (paid or not)
+     *  - Amount received = amount_paid on the matching invoices
+     *  - Quick sales     = walk-in sales (not on invoices)
+     * For the Mzinga store, "Amount received + Quick sales" equals the
+     * dashboard Payment Trends sales for the same dates.
+     */
     public function salesReport(Request $request)
     {
-        $query = InvoiceItem::query();
-    
-        // Apply filters
-        if ($request->filled('product_name')) {
-            $query->whereHas('product', function ($q) use ($request) {
-                $q->where('product_name', 'like', '%' . $request->product_name . '%');
-            });
+        [$from, $to] = $this->salesReportRange($request);
+        $mainStore = Store::mainStore();
+        $storeId = $request->input('store_id', $mainStore ? $mainStore->id : 'all');
+        $storeId = $storeId === 'all' || $storeId === '' ? null : (int) $storeId;
+        $companyId = Auth::user()->company_id;
+
+        // Filters on the invoice itself (date, store, status, customer).
+        $invoiceFilter = function ($q) use ($request, $from, $to, $storeId, $companyId) {
+            $q->when($companyId != 1, fn ($q) => $q->where('company_id', $companyId))
+              ->when($from, fn ($q) => $q->whereBetween('invoice_date', [$from, $to]))
+              ->when($storeId, fn ($q) => $q->whereHas('customer', fn ($c) => $c->where('store_id', $storeId)))
+              ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
+              ->when($request->filled('customer_name'), fn ($q) => $q->whereHas('customer', fn ($c) => $c->where('name', 'like', '%'.$request->customer_name.'%')));
+        };
+        $productFilter = fn ($q) => $q->where('product_name', 'like', '%'.$request->product_name.'%');
+
+        $query = InvoiceItem::with(['product', 'invoice.customer'])
+            ->whereHas('invoice', $invoiceFilter)
+            ->when($request->filled('product_name'), fn ($q) => $q->whereHas('product', $productFilter));
+
+        if ($request->input('export') === 'csv') {
+            return $this->salesReportCsv((clone $query)->orderBy('id', 'desc'));
         }
-    
-        if ($request->filled('customer_name')) {
-            $query->whereHas('invoice.customer', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->customer_name . '%');
-            });
-        }
-    
-        // Fix date filtering to include full day range
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $start = Carbon::parse($request->start_date)->startOfDay();
-            $end = Carbon::parse($request->end_date)->endOfDay();
-    
-            $query->whereHas('invoice', function ($q) use ($start, $end) {
-                $q->whereBetween('invoice_date', [$start, $end]);
-            });
-        }
-    
-        if ($request->filled('start_month') && $request->filled('end_month')) {
-            $query->whereHas('invoice', function ($q) use ($request) {
-                $q->whereBetween('invoice_date', [
-                    Carbon::parse($request->start_month . '-01')->startOfMonth(),
-                    Carbon::parse($request->end_month . '-01')->endOfMonth()
-                ]);
-            });
-        }
-    
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-    
-        // Clone for totals before pagination
-        $totalsQuery = (clone $query);
-        $totalQty = $totalsQuery->sum('qty');
-    
-        // Calculate total amount
+
+        $totalQty = (clone $query)->sum('qty');
         $totalAmount = (clone $query)->selectRaw('SUM(qty * price) as total')->value('total');
-    
-        // Order by ID descending before pagination
-        $sales = $query->orderBy('id', 'desc')->paginate(50);
-    
-        return view('admin.sales_management.sales-report', compact('sales', 'totalQty', 'totalAmount'));
+
+        $amountReceived = Invoice::where($invoiceFilter)
+            ->when($request->filled('product_name'), fn ($q) => $q->whereHas('invoice_items.product', $productFilter))
+            ->sum('amount_paid');
+
+        // Walk-in sales are always paid and have no customer, so they only
+        // count when no customer / non-paid status filter is chosen.
+        $quickSales = 0;
+        $quickQty = 0;
+        if (!$request->filled('customer_name') && in_array($request->input('status'), [null, '', 'Paid'], true)) {
+            $quick = DB::table('sales as s')
+                ->join('products as p', 'p.id', '=', 's.product_id')
+                ->where('s.customer_id', QuickSale::WALK_IN_CUSTOMER)
+                ->whereIn('s.status', QuickSale::SOLD_STATUSES)
+                ->when($companyId != 1, fn ($q) => $q->where('s.company_id', $companyId))
+                ->when($from, fn ($q) => $q->whereBetween('s.date_sold', [$from, $to]))
+                ->when($storeId, fn ($q) => $q->where('p.store_id', $storeId))
+                ->when($request->filled('product_name'), fn ($q) => $q->where('p.product_name', 'like', '%'.$request->product_name.'%'))
+                ->selectRaw('COALESCE(SUM(s.selling_price * s.quantity), 0) as amount, COALESCE(SUM(s.quantity), 0) as qty')
+                ->first();
+            $quickSales = (float) $quick->amount;
+            $quickQty = (float) $quick->qty;
+        }
+
+        $sales = $query->orderBy('id', 'desc')->paginate(50)->withQueryString();
+        $stores = Store::orderBy('name')->get(['id', 'name']);
+
+        return view('admin.sales_management.sales-report', compact(
+            'sales', 'totalQty', 'totalAmount', 'amountReceived', 'quickSales', 'quickQty', 'stores', 'storeId'
+        ));
     }
-    
+
+    // Date range from either the date pair or the month pair (dates win).
+    private function salesReportRange(Request $request)
+    {
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            return [Carbon::parse($request->start_date)->startOfDay(), Carbon::parse($request->end_date)->endOfDay()];
+        }
+        if ($request->filled('start_month') && $request->filled('end_month')) {
+            return [Carbon::parse($request->start_month.'-01')->startOfMonth(), Carbon::parse($request->end_month.'-01')->endOfMonth()];
+        }
+
+        return [null, null];
+    }
+
+    private function salesReportCsv($query)
+    {
+        return response()->streamDownload(function () use ($query) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['Invoice No', 'Product', 'Customer', 'Store', 'Invoice Date', 'Quantity', 'Price', 'Total Amount', 'Invoice Status', 'Date Paid', 'Paid By']);
+            $query->chunk(500, function ($items) use ($out) {
+                foreach ($items as $item) {
+                    $invoice = $item->invoice;
+                    fputcsv($out, [
+                        $item->invoice_id,
+                        optional($item->product)->product_name,
+                        optional(optional($invoice)->customer)->name,
+                        optional(optional(optional($invoice)->customer)->store)->name,
+                        optional($invoice)->invoice_date,
+                        $item->qty,
+                        $item->price,
+                        $item->qty * $item->price,
+                        optional($invoice)->status,
+                        optional($invoice)->date_paid,
+                        optional($invoice)->paid_by,
+                    ]);
+                }
+            });
+            fclose($out);
+        }, 'sales-report-'.now()->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv']);
+    }
 
 }
