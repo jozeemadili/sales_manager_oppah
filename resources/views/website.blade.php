@@ -32,6 +32,10 @@
     .brand img { height: 44px; }
     nav a { margin-left: 22px; color: var(--muted); font-weight: 500; font-size: 15px; }
     nav a:hover { color: var(--blue); }
+    .menu-btn { display: none; background: none; border: 1px solid var(--line); border-radius: 8px; width: 42px; height: 40px; font-size: 20px; color: var(--ink); cursor: pointer; }
+    .head-right { display: flex; align-items: center; gap: 10px; }
+    .mobile-only { display: none; }
+    .btn-sm { padding: 8px 14px; font-size: 14px; color: #fff; }
     .btn { display: inline-block; padding: 12px 22px; border-radius: 8px; font-weight: 600; font-size: 15px; }
     .btn-primary { background: var(--blue); color: #fff; }
     .btn-primary:hover { background: var(--blue-dark); }
@@ -70,7 +74,7 @@
     .lightbox img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
     .lightbox .close { position: absolute; top: 12px; right: 16px; background: none; border: 0; color: #fff; font-size: 36px; line-height: 1; cursor: pointer; }
 
-    section { padding: 72px 0; }
+    section { padding: 72px 0; scroll-margin-top: 68px; }
     section.alt { background: var(--soft); }
     .section-head { text-align: center; max-width: 680px; margin: 0 auto 44px; }
     h2 { font-size: 32px; margin: 6px 0 12px; letter-spacing: -.01em; }
@@ -119,7 +123,13 @@
         .fleet { grid-template-columns: repeat(2, 1fr); }
         .steps { grid-template-columns: 1fr 1fr; row-gap: 28px; }
         h1 { font-size: 36px; }
-        nav a:not(.btn) { display: none; }
+        .menu-btn { display: block; }
+        .mobile-only { display: flex; }
+        nav { display: none; position: absolute; top: 68px; left: 0; right: 0; background: #fff; border-bottom: 1px solid var(--line); box-shadow: 0 10px 24px rgba(0,0,0,.08); padding: 6px 16px 12px; }
+        nav.open { display: block; }
+        nav a { display: block; margin: 0; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 16px; }
+        nav a:last-child { border-bottom: 0; }
+        nav .btn.nav-login { display: none; }
     }
     @media (max-width: 560px) {
         .grid3, .contact, .steps { grid-template-columns: 1fr; }
@@ -135,13 +145,17 @@
 <header>
     <div class="wrap">
         <a class="brand" href="#top"><img src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo"><span>Oppah</span></a>
-        <nav>
+        <nav id="siteNav">
             <a href="#business">What we do</a>
             <a href="#fleet">Our fleet</a>
             <a href="#system">Our system</a>
             <a href="#contact">Contact</a>
-            <a class="btn btn-primary" href="{{ route('login') }}" target="_top">Staff login</a>
+            <a class="btn btn-primary nav-login" href="{{ route('login') }}" target="_top">Staff login</a>
         </nav>
+        <div class="head-right mobile-only">
+            <a class="btn btn-primary btn-sm" href="{{ route('login') }}" target="_top">Staff login</a>
+            <button type="button" class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav">&#9776;</button>
+        </div>
     </div>
 </header>
 
@@ -293,6 +307,14 @@
 </footer>
 
 <script>
+    // Phone menu: open/close, and close after picking a section.
+    (function () {
+        var btn = document.querySelector('.menu-btn'), nav = document.getElementById('siteNav');
+        function set(open) { nav.classList.toggle('open', open); btn.setAttribute('aria-expanded', open); btn.innerHTML = open ? '&times;' : '&#9776;'; }
+        btn.addEventListener('click', function () { set(!nav.classList.contains('open')); });
+        nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { set(false); }); });
+    })();
+
     // Hero background carousel: crossfade every 5 s, pause when the tab is hidden.
     (function () {
         var slides = document.querySelectorAll('.hero-slides div'), dots = document.querySelectorAll('.hero-dots button');
