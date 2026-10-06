@@ -46,19 +46,28 @@ Daily Expenses
 
                     <!-- Filters -->
                     <form method="get" action="{{ route('daily-expenses') }}" class="row g-2 align-items-end mb-3">
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="col-form-label">From</label>
                             <input class="form-control" type="date" name="from" value="{{ $from }}">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="col-form-label">To</label>
                             <input class="form-control" type="date" name="to" value="{{ $to }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="col-form-label">Expense</label>
+                            <select class="form-select" name="type_id">
+                                <option value="">All expenses</option>
+                                @foreach($filterTypes as $type)
+                                    <option value="{{ $type->id }}" @selected((string) $typeId === (string) $type->id)>{{ strtoupper($type->name) }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-3">
                             <label class="col-form-label">Store</label>
                             <input class="form-control" type="text" value="{{ strtoupper($store->name) }}" readonly>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <button class="btn btn-outline-primary w-100" type="submit">Filter <i class="icofont icofont-filter"></i></button>
                         </div>
                     </form>
@@ -100,7 +109,7 @@ Daily Expenses
                                     <th>Description</th>
                                     <th class="text-end">Amount (TZS)</th>
                                     <th>Recorded By</th>
-                                    <th class="text-end">Action</th>
+                                    {{-- <th class="text-end">Action</th> --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -112,6 +121,7 @@ Daily Expenses
                                     <td><small>{{ $expense->description }}</small></td>
                                     <td class="text-end">{{ number_format($expense->amount, 0) }}</td>
                                     <td><small>{{ optional($expense->user)->first_name }}</small></td>
+                                    {{-- Edit / Delete hidden for now
                                     <td class="text-end">
                                         @if($expense->canBeChangedBy(Auth::user()))
                                         <button class="btn btn-outline-primary btn-xs" data-bs-toggle="modal" data-bs-target="#editModal{{ $expense->id }}">Edit</button>
@@ -121,6 +131,7 @@ Daily Expenses
                                         </form>
                                         @endif
                                     </td>
+                                    --}}
                                 </tr>
                                 @endforeach
                             </tbody>

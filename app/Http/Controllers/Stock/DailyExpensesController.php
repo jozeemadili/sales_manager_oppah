@@ -38,7 +38,8 @@ class DailyExpensesController extends Controller
             ->with(['type', 'store', 'user'])
             ->where('company_id', $user->company_id)
             ->whereBetween('expense_date', [$from->toDateString(), $to->toDateString()])
-            ->when($storeId !== 'all', fn ($q) => $q->where('store_id', $storeId));
+            ->when($storeId !== 'all', fn ($q) => $q->where('store_id', $storeId))
+            ->when($request->filled('type_id'), fn ($q) => $q->where('expense_type_id', $request->type_id));
 
         $total = (clone $query)->sum('amount');
 
@@ -60,6 +61,9 @@ class DailyExpensesController extends Controller
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'storeId' => $storeId,
+            'typeId' => $request->input('type_id'),
+            // Every type ever used (incl. inactive ones) so old entries can still be filtered.
+            'filterTypes' => DailyExpenseType::where('company_id', $user->company_id)->orderBy('name')->get(),
             'minDate' => $this->minDate()->toDateString(),
         ]);
     }
