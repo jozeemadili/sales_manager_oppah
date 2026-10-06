@@ -1,17 +1,23 @@
 @php
     $name = optional($company)->name ?: 'Oppah Logistics & Timber Supply';
     $phone = optional($company)->phone_number ?: '768952479';
-    $phoneIntl = '+255'.ltrim(preg_replace('/\D/', '', $phone), '0');
+    $phoneDigits = '255'.ltrim(preg_replace('/\D/', '', $phone), '0');
+    $phoneIntl = '+'.$phoneDigits;
+    $phoneShow = '+255 '.implode(' ', str_split(substr($phoneDigits, 3), 3));
     $email = optional($company)->email_address ?: 'info@oppah01.co.tz';
-    $address = optional($company)->postal_address ?: 'Kongowe, Dar es Salaam';
+    $location = 'Kongowe Mzinga, Dar es Salaam';
+    $mapQuery = rawurlencode('Mzinga, Kongowe, Dar es Salaam, Tanzania');
+    // WhatsApp link with a ready-made message.
+    $wa = fn ($text) => 'https://wa.me/'.$phoneDigits.'?text='.rawurlencode($text);
+    $img = fn ($file) => route('website-img', $file.'.jpg');
 @endphp
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ $name }}</title>
-<meta name="description" content="{{ $name }}: timber (mbao) supply and truck logistics in Tanzania.">
+<title>{{ $name }} | Timber Supply &amp; Truck Transport in Tanzania</title>
+<meta name="description" content="{{ $name }}: timber (mbao) supply from Kongowe Mzinga and truck transport across Tanzania. Call or WhatsApp {{ $phoneShow }}.">
 <link rel="icon" href="{{ asset('assets/images/logo/oppah.png') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,140 +25,200 @@
     :root {
         --blue: #4c73aa; --blue-dark: #2f4f7f; --green: #3f8f3a; --green-soft: #eaf4e8;
         --ink: #1d2733; --muted: #5d6b7a; --bg: #ffffff; --soft: #f4f7fb; --line: #e3e8ef;
+        --night: #0f1a28; --wa: #25d366; --head: 72px;
     }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body { margin: 0; font-family: Inter, system-ui, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; }
     a { color: var(--blue); text-decoration: none; }
-    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+    img { max-width: 100%; }
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 16px; }
+    .eyebrow { color: var(--green); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
+    h1 { font-size: 54px; line-height: 1.08; margin: 12px 0 18px; letter-spacing: -.02em; }
+    h2 { font-size: 34px; line-height: 1.2; margin: 6px 0 12px; letter-spacing: -.01em; }
+    h3 { font-size: 20px; margin: 0 0 8px; }
+    .muted { color: var(--muted); }
 
-    header { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,.95); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
-    header .wrap { display: flex; align-items: center; justify-content: space-between; height: 68px; gap: 12px; }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--ink); }
-    .brand img { height: 44px; }
-    nav a { margin-left: 22px; color: var(--muted); font-weight: 500; font-size: 15px; }
-    nav a:hover { color: var(--blue); }
-    .menu-btn { display: none; background: none; border: 1px solid var(--line); border-radius: 8px; width: 42px; height: 40px; font-size: 20px; color: var(--ink); cursor: pointer; }
-    .head-right { display: flex; align-items: center; gap: 10px; }
-    .mobile-only { display: none; }
-    .btn-sm { padding: 8px 14px; font-size: 14px; color: #fff; }
-    .btn { display: inline-block; padding: 12px 22px; border-radius: 8px; font-weight: 600; font-size: 15px; }
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 999px; font-weight: 600; font-size: 15px; border: 1.5px solid transparent; cursor: pointer; transition: background .2s, color .2s; }
     .btn-primary { background: var(--blue); color: #fff; }
     .btn-primary:hover { background: var(--blue-dark); }
-    .btn-ghost { border: 1.5px solid var(--blue); color: var(--blue); }
-    nav .btn { margin-left: 22px; padding: 8px 16px; color: #fff; }
+    .btn-wa { background: var(--wa); color: #0b3d1f; }
+    .btn-wa:hover { background: #1fb457; }
+    .btn-light { border-color: #fff; color: #fff; }
+    .btn-light:hover { background: rgba(255,255,255,.14); }
+    .btn .arrow { display: grid; place-items: center; width: 28px; height: 28px; margin-right: -12px; border-radius: 50%; background: #fff; color: var(--blue); font-size: 15px; }
+    .btn-sm { padding: 8px 16px; font-size: 14px; }
 
-    .hero { position: relative; overflow: hidden; min-height: 620px; display: flex; align-items: center; padding: 96px 0 88px; background: #1d2733; color: #fff; }
+    /* Header: transparent over the hero, solid once scrolled */
+    header { position: fixed; top: 0; left: 0; right: 0; z-index: 20; transition: background .25s, box-shadow .25s; }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; height: var(--head); gap: 12px; }
+    header.solid { background: rgba(255,255,255,.97); box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; color: #fff; }
+    .brand img { height: 46px; background: #fff; border-radius: 10px; padding: 3px 6px; }
+    header.solid .brand { color: var(--ink); }
+    nav { display: flex; align-items: center; gap: 24px; }
+    nav a { color: rgba(255,255,255,.9); font-weight: 500; font-size: 15px; }
+    nav a:hover { color: #fff; }
+    header.solid nav a { color: var(--muted); }
+    header.solid nav a:hover { color: var(--blue); }
+    nav a.btn, header.solid nav a.btn { color: #fff; }
+    .head-right { display: none; align-items: center; gap: 8px; }
+    .menu-btn { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.5); border-radius: 10px; width: 44px; height: 42px; font-size: 20px; color: #fff; cursor: pointer; }
+    header.solid .menu-btn { background: none; border-color: var(--line); color: var(--ink); }
+
+    /* Hero */
+    .hero { position: relative; overflow: hidden; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: calc(var(--head) + 40px) 0 90px; background: var(--night); color: #fff; }
     .hero .wrap { position: relative; z-index: 2; width: 100%; }
-    .hero-copy { max-width: 640px; }
+    .hero-copy { max-width: 660px; }
     .hero-slides { position: absolute; inset: 0; z-index: 0; }
     .hero-slides div { position: absolute; inset: 0; background-size: cover; background-position: center 40%; opacity: 0; transform: scale(1.06); transition: opacity 1.2s ease, transform 7s ease; }
     .hero-slides div.on { opacity: 1; transform: scale(1); }
-    .hero::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(14,24,38,.88) 0%, rgba(14,24,38,.62) 50%, rgba(14,24,38,.15) 100%); }
+    .hero::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(15,26,40,.9) 0%, rgba(15,26,40,.6) 55%, rgba(15,26,40,.2) 100%), linear-gradient(180deg, rgba(15,26,40,.55) 0%, transparent 25%); }
     .hero .eyebrow { color: #8fd18a; }
-    .hero h1 span { color: #9fc0ef; }
-    .hero .lead { color: rgba(255,255,255,.88); }
-    .hero .btn-ghost { border-color: #fff; color: #fff; }
-    .hero .btn-ghost:hover { background: rgba(255,255,255,.12); }
-    .hero-dots { position: absolute; z-index: 2; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; gap: 8px; }
+    .hero h1 span { color: #f2b56b; }
+    .hero .lead { font-size: 19px; color: rgba(255,255,255,.88); max-width: 560px; margin: 0; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+    .hero-dots { position: absolute; z-index: 2; left: 0; right: 0; bottom: 28px; display: flex; justify-content: center; gap: 8px; }
     .hero-dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,.45); cursor: pointer; }
     .hero-dots button.on { background: #fff; width: 26px; border-radius: 5px; }
-    @media (prefers-reduced-motion: reduce) { .hero-slides div { transition: none; transform: none; } }
-    .eyebrow { color: var(--green); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
-    h1 { font-size: 46px; line-height: 1.1; margin: 10px 0 18px; letter-spacing: -.02em; }
-    h1 span { color: var(--blue); }
-    .lead { font-size: 18px; color: var(--muted); max-width: 560px; }
-    .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
 
+    /* Sections */
+    section { padding: 88px 0; scroll-margin-top: var(--head); }
+    section.alt { background: var(--soft); }
+    .section-head { max-width: 700px; margin: 0 0 44px; }
+    .section-head.center { text-align: center; margin-left: auto; margin-right: auto; }
+    .section-head p { color: var(--muted); margin: 0; font-size: 17px; }
+
+    /* About */
+    .about { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+    .about-photo { position: relative; border-radius: 20px; overflow: hidden; aspect-ratio: 4 / 5; max-height: 560px; box-shadow: 0 24px 50px rgba(15,26,40,.18); }
+    .about-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .about-photo .badge { position: absolute; left: 16px; bottom: 16px; background: #fff; border-radius: 12px; padding: 10px 14px; font-weight: 700; font-size: 14px; box-shadow: 0 8px 20px rgba(0,0,0,.15); }
+    .about-photo .badge small { display: block; color: var(--muted); font-weight: 500; }
+    .points { list-style: none; padding: 0; margin: 24px 0 0; display: grid; gap: 14px; }
+    .points li { display: flex; gap: 12px; align-items: flex-start; }
+    .points .tick { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--green-soft); color: var(--green); display: grid; place-items: center; font-weight: 800; font-size: 14px; margin-top: 1px; }
+
+    /* Services */
+    .services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .service { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); display: flex; flex-direction: column; transition: transform .2s, box-shadow .2s; }
+    .service:hover { transform: translateY(-4px); box-shadow: 0 18px 36px rgba(15,26,40,.1); }
+    .service .pic { aspect-ratio: 16 / 10; overflow: hidden; }
+    .service .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .service .body { padding: 22px 22px 24px; display: flex; flex-direction: column; flex: 1; }
+    .service p { color: var(--muted); margin: 0 0 16px; flex: 1; }
+    .service .more { font-weight: 600; color: var(--blue); }
+    .service .more:hover { text-decoration: underline; }
+
+    /* Customers we serve (tabs) */
+    .tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 26px; }
+    .tabs button { font: inherit; font-weight: 600; font-size: 15px; padding: 10px 18px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; }
+    .tabs button[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .panel { display: grid; grid-template-columns: 1.1fr .9fr; gap: 36px; align-items: center; background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 32px; }
+    .panel[hidden] { display: none; }
+    .panel p { color: var(--muted); font-size: 17px; margin: 0 0 14px; }
+    .panel ul { margin: 0; padding-left: 20px; }
+    .panel li { margin: 6px 0; }
+    .panel .pic { border-radius: 14px; overflow: hidden; aspect-ratio: 4 / 3; }
+    .panel .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Fleet gallery */
     .fleet { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    .fleet button { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 12px; overflow: hidden; aspect-ratio: 3 / 4; display: block; }
+    .fleet button { padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 14px; overflow: hidden; aspect-ratio: 3 / 4; display: block; }
     .fleet button:first-child { grid-column: span 2; grid-row: span 2; aspect-ratio: auto; }
     .fleet img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s; }
     .fleet button:hover img, .fleet button:focus-visible img { transform: scale(1.04); }
     .lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(10,15,25,.92); display: none; align-items: center; justify-content: center; padding: 16px; }
     .lightbox.open { display: flex; }
     .lightbox img { max-width: 100%; max-height: 90vh; border-radius: 8px; }
-    .lightbox .close { position: absolute; top: 12px; right: 16px; background: none; border: 0; color: #fff; font-size: 36px; line-height: 1; cursor: pointer; }
+    .lightbox .close { position: absolute; top: 12px; right: 16px; background: none; border: 0; color: #fff; font-size: 38px; line-height: 1; cursor: pointer; }
 
-    section { padding: 72px 0; scroll-margin-top: 68px; }
-    section.alt { background: var(--soft); }
-    .section-head { text-align: center; max-width: 680px; margin: 0 auto 44px; }
-    h2 { font-size: 32px; margin: 6px 0 12px; letter-spacing: -.01em; }
-    .section-head p { color: var(--muted); margin: 0; }
-
-    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    .biz { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 32px; border-top: 5px solid var(--green); }
-    .biz.trucks { border-top-color: var(--blue); }
-    .biz .icon { width: 52px; height: 52px; border-radius: 12px; display: grid; place-items: center; background: var(--green-soft); color: var(--green); margin-bottom: 14px; }
-    .biz.trucks .icon { background: #e8eef7; color: var(--blue); }
-    .biz h3 { margin: 0 0 8px; font-size: 22px; }
-    .biz p { color: var(--muted); margin: 0 0 14px; }
-    .biz ul { margin: 0; padding-left: 20px; }
-    .biz li { margin: 6px 0; }
-
-    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    .feature { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; }
+    /* Our system */
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .feature { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
     .feature h4 { margin: 0 0 6px; font-size: 17px; }
     .feature p { margin: 0; color: var(--muted); font-size: 15px; }
     .tag { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; margin-bottom: 10px; }
     .tag.t { background: var(--green-soft); color: var(--green); }
     .tag.l { background: #e8eef7; color: var(--blue); }
-    .tag.b { background: #f1ecf8; color: #6a4a9a; }
 
-    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; counter-reset: step; }
-    .step { text-align: center; padding: 0 8px; }
-    .step::before { counter-increment: step; content: counter(step); display: grid; place-items: center; width: 44px; height: 44px; margin: 0 auto 12px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 700; }
-    .step h4 { margin: 0 0 4px; }
-    .step p { margin: 0; color: var(--muted); font-size: 15px; }
+    /* Find us */
+    .findus { display: grid; grid-template-columns: .8fr 1.2fr; gap: 28px; align-items: stretch; }
+    .info-card { background: var(--night); color: #fff; border-radius: 18px; padding: 32px; display: flex; flex-direction: column; gap: 18px; }
+    .info-card .row strong { display: block; color: #8fd18a; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+    .info-card a { color: #fff; }
+    .info-card .row span, .info-card .row a { font-size: 17px; }
+    .map { border-radius: 18px; overflow: hidden; min-height: 380px; border: 1px solid var(--line); background: var(--soft); }
+    .map iframe { width: 100%; height: 100%; min-height: 380px; border: 0; display: block; }
 
-    .contact { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    .contact div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 24px; text-align: center; }
-    .contact strong { display: block; margin-bottom: 4px; }
-    .contact span, .contact a { color: var(--muted); word-break: break-word; }
-    .cta { margin-top: 32px; text-align: center; }
+    /* Quote band + staff band */
+    .quote { background: linear-gradient(120deg, var(--blue-dark), var(--blue)); color: #fff; border-radius: 22px; padding: 44px; display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .quote h2 { margin: 0 0 6px; }
+    .quote p { margin: 0; color: rgba(255,255,255,.88); max-width: 560px; }
+    .staff { margin-top: 22px; border: 1px solid var(--line); border-radius: 18px; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .staff p { margin: 0; color: var(--muted); }
 
-    footer { background: var(--ink); color: #b9c3cf; padding: 28px 0; font-size: 14px; }
-    footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
-    footer a { color: #fff; }
+    /* Footer */
+    footer { background: var(--night); color: #b9c3cf; padding: 56px 0 24px; font-size: 15px; }
+    .foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; }
+    footer h4 { color: #fff; margin: 0 0 12px; font-size: 15px; }
+    footer a { color: #b9c3cf; }
+    footer a:hover { color: #fff; }
+    footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+    footer .brand img { height: 52px; }
+    .foot-bottom { border-top: 1px solid rgba(255,255,255,.12); margin-top: 40px; padding-top: 18px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 14px; }
 
-    @media (max-width: 900px) {
-        .split { grid-template-columns: 1fr; }
-        .hero { min-height: 520px; }
-        .hero::after { background: linear-gradient(180deg, rgba(14,24,38,.55) 0%, rgba(14,24,38,.85) 100%); }
-        .grid3, .contact { grid-template-columns: 1fr 1fr; }
+    /* Floating WhatsApp */
+    .wa-float { position: fixed; right: 18px; bottom: 18px; z-index: 30; width: 58px; height: 58px; border-radius: 50%; background: var(--wa); display: grid; place-items: center; box-shadow: 0 10px 24px rgba(0,0,0,.25); transition: transform .2s; }
+    .wa-float:hover { transform: scale(1.07); }
+    .wa-float svg { width: 32px; height: 32px; fill: #fff; }
+
+    @media (prefers-reduced-motion: reduce) { .hero-slides div { transition: none; transform: none; } .service, .fleet img { transition: none; } }
+
+    @media (max-width: 960px) {
+        h1 { font-size: 40px; }
+        h2 { font-size: 28px; }
+        section { padding: 64px 0; }
+        .about, .findus, .panel { grid-template-columns: 1fr; }
+        .about { gap: 32px; }
+        .about-photo { aspect-ratio: 4 / 3; }
+        .services, .grid3 { grid-template-columns: 1fr 1fr; }
         .fleet { grid-template-columns: repeat(2, 1fr); }
-        .steps { grid-template-columns: 1fr 1fr; row-gap: 28px; }
-        h1 { font-size: 36px; }
-        .menu-btn { display: block; }
-        .mobile-only { display: flex; }
-        nav { display: none; position: absolute; top: 68px; left: 0; right: 0; background: #fff; border-bottom: 1px solid var(--line); box-shadow: 0 10px 24px rgba(0,0,0,.08); padding: 6px 16px 12px; }
-        nav.open { display: block; }
-        nav a { display: block; margin: 0; padding: 12px 4px; border-bottom: 1px solid var(--line); font-size: 16px; }
+        .foot-grid { grid-template-columns: 1fr 1fr; }
+        .hero::after { background: linear-gradient(180deg, rgba(15,26,40,.6) 0%, rgba(15,26,40,.88) 100%); }
+        .head-right { display: flex; }
+        nav { display: none; position: absolute; top: var(--head); left: 0; right: 0; background: #fff; box-shadow: 0 12px 24px rgba(0,0,0,.12); padding: 6px 16px 12px; flex-direction: column; align-items: stretch; gap: 0; }
+        nav.open { display: flex; }
+        nav a, header.solid nav a { color: var(--ink); display: block; padding: 13px 4px; border-bottom: 1px solid var(--line); font-size: 16px; }
         nav a:last-child { border-bottom: 0; }
-        nav .btn.nav-login { display: none; }
+        nav a.nav-login { display: none; }
     }
-    @media (max-width: 560px) {
-        .grid3, .contact, .steps { grid-template-columns: 1fr; }
-        .hero { padding: 64px 0 72px; min-height: 480px; }
-        h1 { font-size: 30px; }
-        section { padding: 52px 0; }
+    @media (max-width: 600px) {
+        h1 { font-size: 32px; }
+        .hero { padding-bottom: 80px; }
+        .hero .lead { font-size: 17px; }
+        .services, .grid3, .foot-grid { grid-template-columns: 1fr; }
+        .panel, .quote, .info-card { padding: 24px; }
         .brand span { display: none; }
+        .actions .btn { flex: 1 1 auto; justify-content: center; }
     }
 </style>
 </head>
 <body>
 
-<header>
+<header id="siteHeader">
     <div class="wrap">
         <a class="brand" href="#top"><img src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo"><span>Oppah</span></a>
         <nav id="siteNav">
-            <a href="#business">What we do</a>
+            <a href="#about">About us</a>
+            <a href="#services">Services</a>
+            <a href="#customers">Who we serve</a>
             <a href="#fleet">Our fleet</a>
-            <a href="#system">Our system</a>
-            <a href="#contact">Contact</a>
-            <a class="btn btn-primary nav-login" href="{{ route('login') }}" target="_top">Staff login</a>
+            <a href="#findus">Find us</a>
+            <a class="btn btn-primary btn-sm nav-login" href="{{ route('login') }}" target="_top">Staff login</a>
         </nav>
-        <div class="head-right mobile-only">
+        <div class="head-right">
             <a class="btn btn-primary btn-sm" href="{{ route('login') }}" target="_top">Staff login</a>
             <button type="button" class="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="siteNav">&#9776;</button>
         </div>
@@ -163,17 +229,17 @@
 <div class="hero" id="top">
     <div class="hero-slides" aria-hidden="true">
         @foreach($slides as $i => $slide)
-            <div class="{{ $i === 0 ? 'on' : '' }}" @if($i === 0) style="background-image:url('{{ route('website-img', $slide.'.jpg') }}')" @else data-bg="{{ route('website-img', $slide.'.jpg') }}" @endif></div>
+            <div class="{{ $i === 0 ? 'on' : '' }}" @if($i === 0) style="background-image:url('{{ $img($slide) }}')" @else data-bg="{{ $img($slide) }}" @endif></div>
         @endforeach
     </div>
     <div class="wrap">
         <div class="hero-copy">
-            <div class="eyebrow">Timber supply &middot; Truck logistics</div>
-            <h1>Quality timber, <span>delivered by our own trucks</span>.</h1>
-            <p class="lead">{{ $name }} supplies timber (mbao) to builders, carpenters and businesses, and runs a fleet of trucks that moves goods across Tanzania. One company, one team, one system.</p>
+            <div class="eyebrow">Kongowe Mzinga &middot; Dar es Salaam</div>
+            <h1>Timber you can build on. <span>Trucks you can count on.</span></h1>
+            <p class="lead">We supply quality timber (mbao) and move it, and your cargo, with our own Scania fleet across Tanzania.</p>
             <div class="actions">
-                <a class="btn btn-primary" href="#contact">Get a quote</a>
-                <a class="btn btn-ghost" href="#business">See what we do</a>
+                <a class="btn btn-wa" href="{{ $wa('Hello Oppah, I would like a quote for ') }}" target="_blank" rel="noopener">WhatsApp for a quote</a>
+                <a class="btn btn-light" href="#services">Our services <span class="arrow">&rarr;</span></a>
             </div>
         </div>
     </div>
@@ -184,43 +250,98 @@
     </div>
 </div>
 
-<section id="business">
+<section id="about">
+    <div class="wrap about">
+        <div>
+            <div class="eyebrow">About us</div>
+            <h2>One company for timber and transport</h2>
+            <p class="muted">{{ $name }} is based at Kongowe Mzinga in Dar es Salaam. We sell sawn timber from our own yard and run our own trucks, so we control the whole journey: from the timber we buy, to the load on the truck, to the delivery at your site.</p>
+            <ul class="points">
+                <li><span class="tick">&check;</span><span><strong>Our own yard.</strong> Timber in common sizes, ready to load at Mzinga.</span></li>
+                <li><span class="tick">&check;</span><span><strong>Our own trucks.</strong> A modern Scania fleet driven by our own drivers.</span></li>
+                <li><span class="tick">&check;</span><span><strong>Proper paperwork.</strong> Invoices, receipts and customer statements for every sale.</span></li>
+                <li><span class="tick">&check;</span><span><strong>Every trip followed.</strong> Our office tracks each truck from loading to delivery.</span></li>
+            </ul>
+        </div>
+        <div class="about-photo">
+            <img src="{{ $img('truck-3') }}" alt="Oppah truck carrying a full timber load" loading="lazy">
+            <div class="badge">Timber + Transport<small>Kongowe Mzinga, Dar es Salaam</small></div>
+        </div>
+    </div>
+</section>
+
+<section class="alt" id="services">
+    <div class="wrap">
+        <div class="section-head center">
+            <div class="eyebrow">Our services</div>
+            <h2>What we can do for you</h2>
+            <p>Buy timber, hire a truck, or both. We load it, move it and deliver it.</p>
+        </div>
+        <div class="services">
+            <article class="service">
+                <div class="pic"><img src="{{ $img('truck-4') }}" alt="Oppah truck loaded with timber" loading="lazy"></div>
+                <div class="body">
+                    <h3>Timber supply (Mbao)</h3>
+                    <p>Sawn timber for construction, roofing, formwork and furniture, sold from our yard at Kongowe Mzinga. Cash or credit, always with a proper invoice.</p>
+                    <a class="more" href="{{ $wa('Hello Oppah, I want to buy timber. Sizes and quantity: ') }}" target="_blank" rel="noopener">Ask for timber prices &rarr;</a>
+                </div>
+            </article>
+            <article class="service">
+                <div class="pic"><img src="{{ $img('truck-6') }}" alt="Oppah truck carrying cargo" loading="lazy"></div>
+                <div class="body">
+                    <h3>Truck hire &amp; transport</h3>
+                    <p>Our trucks carry timber and general cargo, short and long distance. Each trip is planned, costed and followed by our office.</p>
+                    <a class="more" href="{{ $wa('Hello Oppah, I need a truck. From: ... To: ... Cargo: ...') }}" target="_blank" rel="noopener">Book a truck &rarr;</a>
+                </div>
+            </article>
+            <article class="service">
+                <div class="pic"><img src="{{ $img('truck-1') }}" alt="Oppah Scania truck ready for delivery" loading="lazy"></div>
+                <div class="body">
+                    <h3>Delivery to your site</h3>
+                    <p>Buy your timber and we bring it to your building site, workshop or shop with our own truck, so you don't have to arrange transport.</p>
+                    <a class="more" href="{{ $wa('Hello Oppah, I want timber delivered to: ') }}" target="_blank" rel="noopener">Arrange a delivery &rarr;</a>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section id="customers">
     <div class="wrap">
         <div class="section-head">
-            <div class="eyebrow">What we do</div>
-            <h2>Two businesses, working together</h2>
-            <p>Our timber yard and our trucks support each other: we buy and deliver timber with our own fleet, and our trucks also carry cargo for other customers.</p>
+            <div class="eyebrow">Who we serve</div>
+            <h2>Built around our customers</h2>
+            <p>From one-off orders to regular supply, these are the people we work with every day.</p>
         </div>
-        <div class="split">
-            <div class="biz">
-                <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1"/><rect x="3" y="10" width="18" height="5" rx="1"/><rect x="3" y="16" width="18" height="5" rx="1"/></svg></div>
-                <h3>Timber supply (Mbao)</h3>
-                <p>Sawn timber in common sizes for construction, roofing, furniture and formwork, sold from our main yard at Mzinga.</p>
-                <ul>
-                    <li>Many sizes and grades, ready in stock</li>
-                    <li>Cash and credit sales with proper invoices</li>
-                    <li>Delivery to your site with our trucks</li>
-                    <li>Clear customer statements and receipts</li>
-                </ul>
-            </div>
-            <div class="biz trucks">
-                <div class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h13v10H1z"/><path d="M14 9h4l4 4v3h-8z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="17.5" cy="18.5" r="2"/></svg></div>
-                <h3>Trucks &amp; logistics</h3>
-                <p>Our own trucks and drivers carry timber and general cargo, with every trip planned, costed and followed.</p>
-                <ul>
-                    <li>Trucks for hire, short and long distance</li>
-                    <li>Trips planned with routes and costs</li>
-                    <li>Live trip locations from the driver app</li>
-                    <li>Trip ledgers and expense records</li>
-                </ul>
-            </div>
+        @php($groups = [
+            ['builders', 'Builders & contractors', 'truck-5', 'Steady timber supply for building projects, delivered when the site needs it.', ['Formwork, roofing and scaffolding timber', 'Large orders delivered straight to site', 'Credit for regular customers, with statements']],
+            ['carpenters', 'Carpenters & furniture', 'truck-2', 'Good timber for workshops making doors, windows, beds and furniture.', ['A range of sizes from one yard', 'Pick up at Mzinga or get it delivered', 'Clear receipts for every purchase']],
+            ['shops', 'Hardware shops', 'truck-4', 'Restock your shop with timber in the sizes your customers ask for.', ['Wholesale quantities', 'Regular deliveries with our trucks', 'Invoices and payment records you can trust']],
+            ['cargo', 'Cargo customers', 'truck-6', 'Need goods moved? Hire our trucks for cargo across Tanzania.', ['Short and long distance trips', 'Experienced drivers, followed by our office', 'One call or WhatsApp to book']],
+        ])
+        <div class="tabs" role="tablist" aria-label="Customers we serve">
+            @foreach($groups as $i => [$key, $label])
+                <button type="button" role="tab" id="tab-{{ $key }}" aria-controls="panel-{{ $key }}" aria-selected="{{ $i === 0 ? 'true' : 'false' }}" tabindex="{{ $i === 0 ? '0' : '-1' }}">{{ $label }}</button>
+            @endforeach
         </div>
+        @foreach($groups as $i => [$key, $label, $photo, $intro, $items])
+            <div class="panel" role="tabpanel" id="panel-{{ $key }}" aria-labelledby="tab-{{ $key }}" @if($i !== 0) hidden @endif>
+                <div>
+                    <h3>{{ $label }}</h3>
+                    <p>{{ $intro }}</p>
+                    <ul>
+                        @foreach($items as $item)<li>{{ $item }}</li>@endforeach
+                    </ul>
+                </div>
+                <div class="pic"><img src="{{ $img($photo) }}" alt="Oppah truck" loading="lazy"></div>
+            </div>
+        @endforeach
     </div>
 </section>
 
 <section class="alt" id="fleet">
     <div class="wrap">
-        <div class="section-head">
+        <div class="section-head center">
             <div class="eyebrow">Our fleet</div>
             <h2>Our trucks on the road</h2>
             <p>A modern Scania fleet in Oppah colours, carrying timber and cargo across Tanzania.</p>
@@ -234,8 +355,8 @@
                 ['truck-6', 'Oppah truck on a village road'],
                 ['truck-7', 'Oppah truck being prepared for a trip'],
             ] as [$file, $alt])
-                <button type="button" data-full="{{ route('website-img', $file.'.jpg') }}" aria-label="View larger: {{ $alt }}">
-                    <img src="{{ route('website-img', $file.'.jpg') }}" alt="{{ $alt }}" loading="lazy">
+                <button type="button" data-full="{{ $img($file) }}" aria-label="View larger: {{ $alt }}">
+                    <img src="{{ $img($file) }}" alt="{{ $alt }}" loading="lazy">
                 </button>
             @endforeach
         </div>
@@ -249,68 +370,125 @@
 
 <section id="system">
     <div class="wrap">
-        <div class="section-head">
-            <div class="eyebrow">Our system</div>
-            <h2>One system runs the whole company</h2>
-            <p>Timber sales, stock, trucks, trips and money are all managed in the same Oppah portal, so the office always has one true picture of the business.</p>
+        <div class="section-head center">
+            <div class="eyebrow">How we work</div>
+            <h2>Every sale and every trip on record</h2>
+            <p>Our own system connects the timber yard, the trucks and the office, so you get accurate invoices and we always know where your order is.</p>
         </div>
         <div class="grid3">
-            <div class="feature"><span class="tag t">Timber</span><h4>Stock &amp; stores</h4><p>Stock in every store, transfers between stores, and low-stock alerts.</p></div>
-            <div class="feature"><span class="tag t">Timber</span><h4>Quick sales &amp; invoices</h4><p>Fast sales at the counter, printed invoices, and payments recorded against each invoice.</p></div>
-            <div class="feature"><span class="tag t">Timber</span><h4>Customer statements</h4><p>Unpaid invoices by customer, statements and payment reminders with a QR code.</p></div>
-            <div class="feature"><span class="tag l">Trucks</span><h4>Trips &amp; routes</h4><p>Each trip has a truck, driver, route plan, cargo and income, from start to finish.</p></div>
-            <div class="feature"><span class="tag l">Trucks</span><h4>Driver app &amp; map</h4><p>Drivers use the Oppah app on their phone; the office sees each truck on the trips map.</p></div>
-            <div class="feature"><span class="tag l">Trucks</span><h4>Trip expenses</h4><p>Fuel, allowances and other trip costs recorded and checked against each trip.</p></div>
-            <div class="feature"><span class="tag b">Finance</span><h4>Daily expenses</h4><p>Day-to-day costs recorded and reported by date.</p></div>
-            <div class="feature"><span class="tag b">Finance</span><h4>Bank deposits</h4><p>Deposits with bank slips, partial deposits and the amount still to bank.</p></div>
-            <div class="feature"><span class="tag b">Finance</span><h4>End of day</h4><p>A daily closing report and timber ledger, so every day is checked and closed.</p></div>
+            <div class="feature"><span class="tag t">Timber</span><h4>Live stock</h4><p>We know what is in the yard before we quote you.</p></div>
+            <div class="feature"><span class="tag t">Timber</span><h4>Invoices &amp; statements</h4><p>Every sale is invoiced, and every payment shows on your statement.</p></div>
+            <div class="feature"><span class="tag t">Timber</span><h4>Payment reminders</h4><p>Clear reminders with a QR code to check your balance.</p></div>
+            <div class="feature"><span class="tag l">Trucks</span><h4>Planned trips</h4><p>Each trip has a truck, driver, route and cargo before it leaves.</p></div>
+            <div class="feature"><span class="tag l">Trucks</span><h4>Followed on the map</h4><p>Our drivers' app shows the office where each truck is.</p></div>
+            <div class="feature"><span class="tag l">Trucks</span><h4>Checked every day</h4><p>Sales, deposits and costs are closed and checked daily.</p></div>
         </div>
     </div>
 </section>
 
-<section class="alt">
+<section class="alt" id="findus">
     <div class="wrap">
         <div class="section-head">
-            <div class="eyebrow">How it works</div>
-            <h2>From order to delivery</h2>
+            <div class="eyebrow">Find us</div>
+            <h2>Visit our yard at Kongowe Mzinga</h2>
+            <p>Come and see the timber, or call us and we will bring it to you.</p>
         </div>
-        <div class="steps">
-            <div class="step"><h4>Order</h4><p>Call or visit us with the sizes and amount you need.</p></div>
-            <div class="step"><h4>Invoice</h4><p>We prepare your invoice from our live stock.</p></div>
-            <div class="step"><h4>Load &amp; deliver</h4><p>Our truck carries the timber to your site.</p></div>
-            <div class="step"><h4>Statement</h4><p>You get clear receipts and statements for every payment.</p></div>
+        <div class="findus">
+            <div class="info-card">
+                <div class="row"><strong>Location</strong><span>{{ $location }}</span></div>
+                <div class="row"><strong>Phone &amp; WhatsApp</strong><a href="tel:{{ $phoneIntl }}">{{ $phoneShow }}</a></div>
+                <div class="row"><strong>Email</strong><a href="mailto:{{ $email }}">{{ $email }}</a></div>
+                <div class="actions" style="margin-top:auto">
+                    <a class="btn btn-wa btn-sm" href="{{ $wa('Hello Oppah, how do I get to your yard at Kongowe Mzinga?') }}" target="_blank" rel="noopener">WhatsApp us</a>
+                    <a class="btn btn-light btn-sm" href="https://www.google.com/maps/search/?api=1&query={{ $mapQuery }}" target="_blank" rel="noopener">Open in Google Maps</a>
+                </div>
+            </div>
+            <div class="map">
+                <iframe src="https://www.google.com/maps?q={{ $mapQuery }}&z=14&output=embed" title="Map: {{ $location }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
         </div>
     </div>
 </section>
 
 <section id="contact">
     <div class="wrap">
-        <div class="section-head">
-            <div class="eyebrow">Contact us</div>
-            <h2>Need timber or a truck?</h2>
-            <p>Talk to our team for prices, stock and transport.</p>
+        <div class="quote">
+            <div>
+                <h2>Need timber or a truck this week?</h2>
+                <p>Send us the sizes, the quantity or the route. We reply with a price and a delivery time.</p>
+            </div>
+            <div class="actions" style="margin-top:0">
+                <a class="btn btn-wa" href="{{ $wa('Hello Oppah, I would like a quote for ') }}" target="_blank" rel="noopener">WhatsApp for a quote</a>
+                <a class="btn btn-light" href="tel:{{ $phoneIntl }}">Call {{ $phoneShow }}</a>
+            </div>
         </div>
-        <div class="contact">
-            <div><strong>Phone</strong><a href="tel:{{ $phoneIntl }}">{{ $phoneIntl }}</a></div>
-            <div><strong>Email</strong><a href="mailto:{{ $email }}">{{ $email }}</a></div>
-            <div><strong>Location</strong><span>{{ $address }}</span></div>
+        <div class="staff">
+            <div>
+                <strong>Oppah staff portal</strong>
+                <p>Sales, stock, trucks and trips: log in to the company system.</p>
+            </div>
+            <a class="btn btn-primary" href="{{ route('login') }}" target="_top">Staff login <span class="arrow">&rarr;</span></a>
         </div>
-        <div class="cta"><a class="btn btn-primary" href="tel:{{ $phoneIntl }}">Call us now</a></div>
     </div>
 </section>
 
 <footer>
     <div class="wrap">
-        <span>&copy; {{ date('Y') }} {{ $name }}</span>
-        <a href="{{ route('login') }}" target="_top">Staff login</a>
+        <div class="foot-grid">
+            <div>
+                <a class="brand" href="#top"><img src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo"></a>
+                <p style="margin:14px 0 0">Timber supply and truck transport from Kongowe Mzinga, Dar es Salaam.</p>
+            </div>
+            <div>
+                <h4>Quick links</h4>
+                <ul>
+                    <li><a href="#about">About us</a></li>
+                    <li><a href="#services">Services</a></li>
+                    <li><a href="#customers">Who we serve</a></li>
+                    <li><a href="#fleet">Our fleet</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Contact</h4>
+                <ul>
+                    <li><a href="tel:{{ $phoneIntl }}">{{ $phoneShow }}</a></li>
+                    <li><a href="{{ $wa('Hello Oppah') }}" target="_blank" rel="noopener">WhatsApp</a></li>
+                    <li><a href="mailto:{{ $email }}">{{ $email }}</a></li>
+                    <li>{{ $location }}</li>
+                </ul>
+            </div>
+            <div>
+                <h4>Staff</h4>
+                <ul>
+                    <li><a href="{{ route('login') }}" target="_top">Staff login</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="foot-bottom">
+            <span>&copy; {{ date('Y') }} {{ $name }}. All rights reserved.</span>
+            <span>Smart Generation In Smart Business</span>
+        </div>
     </div>
 </footer>
 
+<a class="wa-float" href="{{ $wa('Hello Oppah') }}" target="_blank" rel="noopener" aria-label="Chat with us on WhatsApp">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3C9 3 3.3 8.6 3.3 15.6c0 2.5.7 4.8 2 6.8L3.2 29l6.8-2.1c1.9 1 4 1.6 6.1 1.6 7 0 12.7-5.7 12.7-12.7S23 3 16 3zm0 23.2c-2 0-3.9-.6-5.5-1.6l-.4-.2-4 1.2 1.3-3.9-.3-.4c-1.1-1.7-1.7-3.6-1.7-5.6C5.4 9.8 10.2 5.1 16 5.1s10.6 4.7 10.6 10.5S21.8 26.2 16 26.2zm5.8-7.9c-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.6-1.8-1.7-2.1-.2-.3 0-.5.1-.7l.5-.6c.2-.2.2-.3.3-.6.1-.2 0-.4 0-.6l-1-2.4c-.3-.6-.5-.5-.7-.5h-.6c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.4 1.4 3.6c.2.2 2.4 3.7 5.8 5.2 2.9 1.1 3.4.9 4.1.8.6-.1 1.9-.8 2.2-1.6.3-.8.3-1.4.2-1.6-.1-.1-.3-.2-.7-.4z"/></svg>
+</a>
+
 <script>
+    // Header turns solid after scrolling past the top of the hero.
+    (function () {
+        var head = document.getElementById('siteHeader');
+        function update() { head.classList.toggle('solid', window.scrollY > 40 || document.getElementById('siteNav').classList.contains('open')); }
+        window.addEventListener('scroll', update, { passive: true });
+        update();
+        window.__updateHeader = update;
+    })();
+
     // Phone menu: open/close, and close after picking a section.
     (function () {
         var btn = document.querySelector('.menu-btn'), nav = document.getElementById('siteNav');
-        function set(open) { nav.classList.toggle('open', open); btn.setAttribute('aria-expanded', open); btn.innerHTML = open ? '&times;' : '&#9776;'; }
+        function set(open) { nav.classList.toggle('open', open); btn.setAttribute('aria-expanded', open); btn.innerHTML = open ? '&times;' : '&#9776;'; window.__updateHeader(); }
         btn.addEventListener('click', function () { set(!nav.classList.contains('open')); });
         nav.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { set(false); }); });
     })();
@@ -331,6 +509,29 @@
         start();
     })();
 
+    // "Who we serve" tabs (arrow keys move between tabs).
+    (function () {
+        var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+        function select(tab) {
+            tabs.forEach(function (t) {
+                var on = t === tab;
+                t.setAttribute('aria-selected', on);
+                t.tabIndex = on ? 0 : -1;
+                document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+            });
+        }
+        tabs.forEach(function (tab, i) {
+            tab.addEventListener('click', function () { select(tab); });
+            tab.addEventListener('keydown', function (e) {
+                var next = e.key === 'ArrowRight' ? i + 1 : e.key === 'ArrowLeft' ? i - 1 : null;
+                if (next === null) { return; }
+                next = tabs[(next + tabs.length) % tabs.length];
+                select(next); next.focus(); e.preventDefault();
+            });
+        });
+    })();
+
+    // Fleet photos: click to enlarge.
     (function () {
         var box = document.getElementById('lightbox'), img = box.querySelector('img');
         document.querySelectorAll('.fleet button').forEach(function (btn) {
