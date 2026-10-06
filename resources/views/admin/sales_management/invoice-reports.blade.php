@@ -47,20 +47,28 @@
                             <input type="text" name="customer_name" class="form-control" value="{{ request('customer_name') }}">
                         </div>
                         <div class="col-md-3">
+                            <label>Date Of:</label>
+                            <select name="date_by" class="form-control">
+                                <option value="invoice" {{ request('date_by', 'invoice') === 'invoice' ? 'selected' : '' }}>Invoice date</option>
+                                <option value="payment" {{ request('date_by') === 'payment' ? 'selected' : '' }}>Payment date</option>
+                            </select>
+                            <small class="text-muted">Payment date = any payment received in the period.</small>
+                        </div>
+                        <div class="col-md-3">
                             <label>Filter By:</label>
                             <select id="filter_type" class="form-control">
                                 <option value="">Select Type</option>
-                                <option value="date">Date</option>
-                                <option value="month">Month</option>
+                                <option value="date" {{ request('start_date') ? 'selected' : '' }}>Date</option>
+                                <option value="month" {{ !request('start_date') && request('start_month') ? 'selected' : '' }}>Month</option>
                             </select>
                         </div>
-                        <div id="date_filter" class="col-md-3 d-none">
+                        <div id="date_filter" class="col-md-3 {{ request('start_date') ? '' : 'd-none' }}">
                             <label>Start Date:</label>
                             <input type="date" name="start_date" class="form-control" value="{{ request('start_date') }}">
                             <label>End Date:</label>
                             <input type="date" name="end_date" class="form-control" value="{{ request('end_date') }}">
                         </div>
-                        <div id="month_filter" class="col-md-3 d-none">
+                        <div id="month_filter" class="col-md-3 {{ !request('start_date') && request('start_month') ? '' : 'd-none' }}">
                             <label>Start Month:</label>
                             <input type="month" name="start_month" class="form-control" value="{{ request('start_month') }}">
                             <label>End Month:</label>

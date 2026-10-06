@@ -75,11 +75,36 @@
 	                        </div>
 	                        <p>How to use it ?<a class="ms-2" href="{{ route('how-to-use') }}" target="_blank">Read User Manual</a></p>
 	                    </form>
+	                    <button type="button" class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="modal" data-bs-target="#websitePreview">
+	                        <i class="fa fa-globe"></i> View our website
+	                    </button>
 	                </div>
 	            </div>
 	        </div>
 	    </div>
 	</section>
+
+	<div class="modal fade" id="websitePreview" tabindex="-1" aria-labelledby="websitePreviewLabel" aria-hidden="true">
+	    <div class="modal-dialog modal-xl modal-dialog-centered">
+	        <div class="modal-content">
+	            <div class="modal-header">
+	                <h5 class="modal-title" id="websitePreviewLabel">Our website</h5>
+	                <a class="btn btn-sm btn-primary ms-auto me-2" href="{{ route('website') }}" target="_blank">Open full site</a>
+	                <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
+	            </div>
+	            <div class="modal-body p-0">
+	                <iframe data-src="{{ route('website') }}" title="Our website" style="width:100%;height:75vh;border:0;display:block"></iframe>
+	            </div>
+	        </div>
+	    </div>
+	</div>
+	<script>
+	    // Load the website only when the preview is opened.
+	    document.getElementById('websitePreview').addEventListener('show.bs.modal', function () {
+	        var frame = this.querySelector('iframe');
+	        if (!frame.getAttribute('src')) { frame.setAttribute('src', frame.getAttribute('data-src')); }
+	    });
+	</script>
 
     @push('scripts')
     @endpush

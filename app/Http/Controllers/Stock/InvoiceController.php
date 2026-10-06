@@ -419,15 +419,19 @@ class InvoiceController extends Controller
 
     }
 
-    public function pendingInvoices(Request $request)
+    /**
+     * Filters shared by the invoice report (v1/invoices/pending) and its CSV.
+     * date_by = invoice (invoice date, default) | payment (any payment
+     * received in the period, including part-payments).
+     */
+    private function applyReportFilters($query, Request $request)
     {
-        $query = Invoice::with(['Customer', 'User', 'invoice_items']);
-
+        if ($request->filled('invoice_no')) {
+            $query->where('id', 'like', '%'.$request->invoice_no.'%');
+        }
 
         if ($request->filled('customer_name')) {
-            $query->whereHas('Customer', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->customer_name . '%');
-            });
+            $query->whereHas('Customer', fn ($q) => $q->where('name', 'like', '%'.$request->customer_name.'%'));
         }
 
         if ($request->filled('status')) {
@@ -435,24 +439,33 @@ class InvoiceController extends Controller
         }
 
         if ($request->filled('control_no')) {
-            $query->where('control_no', 'like', '%' . $request->control_no . '%');
+            $query->where('control_no', 'like', '%'.$request->control_no.'%');
         }
 
-        // if ($request->filled('start_date') && $request->filled('end_date')) {
-        //     $query->whereBetween('invoice_date', [$request->start_date, $request->end_date]);
-        // }
+        $from = $to = null;
         if ($request->filled('start_date') && $request->filled('end_date')) {
-                $start = Carbon::parse($request->start_date)->setTime(0, 1);
-                $end = Carbon::parse($request->end_date)->setTime(23, 59);
-            
-                $query->whereBetween('invoice_date', [$start, $end]);
-            }
-
-        if ($request->filled('start_month') && $request->filled('end_month')) {
-            $query->whereYear('invoice_date', date('Y', strtotime($request->start_month)))
-                ->whereMonth('invoice_date', '>=', date('m', strtotime($request->start_month)))
-                ->whereMonth('invoice_date', '<=', date('m', strtotime($request->end_month)));
+            $from = Carbon::parse($request->start_date)->startOfDay();
+            $to = Carbon::parse($request->end_date)->endOfDay();
+        } elseif ($request->filled('start_month') && $request->filled('end_month')) {
+            $from = Carbon::parse($request->start_month.'-01')->startOfMonth();
+            $to = Carbon::parse($request->end_month.'-01')->endOfMonth();
         }
+
+        if ($from && $to) {
+            if ($request->input('date_by') === 'payment') {
+                $query->whereHas('invoice_payment_details', fn ($q) => $q->whereBetween('date_payed', [$from, $to]));
+            } else {
+                $query->whereBetween('invoice_date', [$from, $to]);
+            }
+        }
+
+        return $query;
+    }
+
+    public function pendingInvoices(Request $request)
+    {
+        $query = Invoice::with(['Customer', 'User', 'invoice_items']);
+        $this->applyReportFilters($query, $request);
 
         // Fetch filtered data
         $Invoice = $query->orderBy('invoice_date', 'desc')->paginate(50);
@@ -558,35 +571,7 @@ class InvoiceController extends Controller
     public function downloadCSV(Request $request)
     {
         $query = Invoice::with(['Customer', 'User', 'invoice_items']);
-
-        // Apply filters (same as pendingInvoices method)
-        if ($request->filled('invoice_no')) {
-            $query->where('id', 'like', '%' . $request->invoice_no . '%');
-        }
-        
-        if ($request->filled('customer_name')) {
-            $query->whereHas('Customer', function ($q) use ($request) {
-                $q->where('name', 'like', '%' . $request->customer_name . '%');
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('control_no')) {
-            $query->where('control_no', 'like', '%' . $request->control_no . '%');
-        }
-
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('invoice_date', [$request->start_date, $request->end_date]);
-        }
-
-        if ($request->filled('start_month') && $request->filled('end_month')) {
-            $query->whereYear('invoice_date', date('Y', strtotime($request->start_month)))
-                ->whereMonth('invoice_date', '>=', date('m', strtotime($request->start_month)))
-                ->whereMonth('invoice_date', '<=', date('m', strtotime($request->end_month)));
-        }
+        $this->applyReportFilters($query, $request);
 
         // Fetch data
         $invoices = $query->get();

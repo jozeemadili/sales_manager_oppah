@@ -121,17 +121,32 @@ class LogisticsController extends Controller
         ]);
     }
 
-    public function getBankDeposit()
-{
-    $deposits = BankDeposist::with('files')->orderBy('id', 'desc')->paginate(10);
+    public function getBankDeposit(Request $request)
+    {
+        // Filters: deposit date range, bank and account (dropdowns from the
+        // distinct values in the table; bank names compared case-insensitively).
+        $query = BankDeposist::with('files')
+            ->when($request->filled('from'), fn ($q) => $q->where('deposited_date', '>=', Carbon::parse($request->from)->startOfDay()))
+            ->when($request->filled('to'), fn ($q) => $q->where('deposited_date', '<=', Carbon::parse($request->to)->endOfDay()))
+            ->when($request->filled('bank'), fn ($q) => $q->whereRaw('UPPER(TRIM(bank_name)) = ?', [strtoupper(trim($request->bank))]))
+            ->when($request->filled('account'), fn ($q) => $q->where('account_number', $request->account));
 
-    $totalDeposits = BankDeposist::sum('deposited_amount');
+        $totalDeposits = (clone $query)->sum('deposited_amount');
+        $deposits = $query->orderBy('id', 'desc')->paginate(10)->withQueryString();
 
-    return view('admin.sales_management.bank-deposot-preview', [
-        'deposits' => $deposits,
-        'totalDeposits' => $totalDeposits
-    ]);
-}
+        $banks = BankDeposist::whereNotNull('bank_name')->where('bank_name', '!=', '')
+            ->selectRaw('DISTINCT UPPER(TRIM(bank_name)) as bank')->orderBy('bank')->pluck('bank');
+        $accounts = BankDeposist::whereNotNull('account_number')->where('account_number', '!=', '')
+            ->when($request->filled('bank'), fn ($q) => $q->whereRaw('UPPER(TRIM(bank_name)) = ?', [strtoupper(trim($request->bank))]))
+            ->distinct()->orderBy('account_number')->pluck('account_number');
+
+        return view('admin.sales_management.bank-deposot-preview', [
+            'deposits' => $deposits,
+            'totalDeposits' => $totalDeposits,
+            'banks' => $banks,
+            'accounts' => $accounts,
+        ]);
+    }
 
     
     // public function storeBankDeposit()

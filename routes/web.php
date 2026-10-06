@@ -51,6 +51,10 @@ Route::post('/forget-password', function(){
 })->name('forget-password');
 
 Route::get('/how-to-use', [PortalUsersController::class, 'howToUse'])->name('how-to-use');
+// Public company website (must stay above the '/{id}' catch-all)
+Route::get('/website', function () {
+    return view('website', ['company' => \App\Models\Company::find(1)]);
+})->name('website');
 Route::get('/{id}',[InvoiceController::class, 'download'])->name('free-quotation-download');
 Route::get('/l/{id}',[LogisticsController::class, 'download'])->name('free-ledger-download');
 // Customer statement opened from the QR code on a printed payment reminder (signed, no login)

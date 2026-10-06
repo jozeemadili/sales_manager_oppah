@@ -77,9 +77,42 @@
         <h5>Bank Deposits</h5>
     
         <h6 class="text-success mt-2">
-            <strong>Total Deposits:</strong>
+            <strong>Total Deposits{{ request()->anyFilled(['from', 'to', 'bank', 'account']) ? ' (filtered)' : '' }}:</strong>
             {{ number_format($totalDeposits, 2) }}
         </h6>
+
+        <form method="GET" action="{{ route('bank-deposit') }}" class="row g-2 align-items-end mt-2">
+            <div class="col-md-2">
+                <label class="small mb-0">From</label>
+                <input type="date" name="from" class="form-control" value="{{ request('from') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="small mb-0">To</label>
+                <input type="date" name="to" class="form-control" value="{{ request('to') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="small mb-0">Bank</label>
+                <select name="bank" class="form-control" onchange="this.form.account && (this.form.account.value = '')">
+                    <option value="">All banks</option>
+                    @foreach($banks as $bank)
+                        <option value="{{ $bank }}" @selected(strtoupper(trim(request('bank', ''))) === $bank)>{{ $bank }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="small mb-0">Account</label>
+                <select name="account" class="form-control">
+                    <option value="">All accounts</option>
+                    @foreach($accounts as $account)
+                        <option value="{{ $account }}" @selected(request('account') === $account)>{{ $account }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <a href="{{ route('bank-deposit') }}" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
     </div>
     
 
@@ -91,6 +124,7 @@
                 <th>#</th>
                 <th>Source / Origin </th>
                 <th>Bank Deposited</th>
+                <th>Account</th>
                 <th>Amount Deposited</th>
                 <th>Date Deposited</th>
                 <th>status</th>
@@ -103,7 +137,8 @@
             <tr>
                 <td>{{ $deposit->id }}</td>
                 <td>{{ $deposit->deposit_origin }}</td>
-                <td>{{ $deposit->bank_name }}</td>
+                <td>{{ strtoupper(trim($deposit->bank_name)) }}</td>
+                <td>{{ $deposit->account_number ?: '—' }}</td>
                 <td>{{ number_format($deposit->deposited_amount, 2) }}</td>
                 <td>{{ $deposit->deposited_date->format('Y-m-d') }}</td>
                 <td>{{ $deposit->status }}</td>
