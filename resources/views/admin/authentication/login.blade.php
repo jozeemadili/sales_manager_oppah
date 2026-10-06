@@ -5,6 +5,11 @@
 @endsection
 
 @push('css')
+<style>
+    /* theme CSS has no working 'hide' label, so the toggle went blank after one click */
+    .login-form .show-hide span:not(.show):before { content: "hide"; }
+    #websitePreview .modal-header .btn-close { position: static; margin: 0; }
+</style>
 @endpush
 
 @section('content')
@@ -33,7 +38,7 @@
 	                            <div class="input-group">
 	                                <span class="input-group-text"><i class="icon-lock"></i></span>
 	                                <input class="form-control" type="password" name="password" required placeholder="Enter your password ..." />
-	                                <div class="show-hide"><span class="show"> </span></div>
+	                                <div class="show-hide"><span class="show" id="togglePassword" role="button" aria-label="Show password"> </span></div>
 	                            </div>
 								@if($errors->has('password'))
 									<span class="text-danger txt-secondary"> - {{ $errors->first('password') }}</span>
@@ -50,6 +55,11 @@
 	                            <a class="link" href="{{ route('forget-password') }}">Forgot password?</a>
 	                        </div>
 	                        <div class="form-group"><button style="width:100%" class="btn btn-primary btn-block" type="submit">Sign in</button></div>
+	                        <div class="form-group">
+	                            <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#websitePreview">
+	                                <i class="fa fa-globe"></i> View our website
+	                            </button>
+	                        </div>
 	                        
 							@if($message = Session::get('error'))
 							<div class="alert alert-danger outline alert-dismissible fade show" role="alert">
@@ -75,9 +85,6 @@
 	                        </div>
 	                        <p>How to use it ?<a class="ms-2" href="{{ route('how-to-use') }}" target="_blank">Read User Manual</a></p>
 	                    </form>
-	                    <button type="button" class="btn btn-outline-primary w-100 mt-2" data-bs-toggle="modal" data-bs-target="#websitePreview">
-	                        <i class="fa fa-globe"></i> View our website
-	                    </button>
 	                </div>
 	            </div>
 	        </div>
@@ -99,6 +106,19 @@
 	    </div>
 	</div>
 	<script>
+	    // Show / hide password (the theme script only handles inputs named login[password]).
+	    document.getElementById('togglePassword').addEventListener('click', function (e) {
+	        e.stopImmediatePropagation(); // the theme's handler would flip the label back
+	        var input = document.querySelector('.login-form input[name="password"]');
+	        var hidden = input.type === 'password';
+	        input.type = hidden ? 'text' : 'password';
+	        this.classList.toggle('show', !hidden);
+	        this.setAttribute('aria-label', hidden ? 'Hide password' : 'Show password');
+	    });
+	    document.querySelector('.login-form').addEventListener('submit', function () {
+	        this.querySelector('input[name="password"]').type = 'password';
+	    });
+
 	    // Load the website only when the preview is opened.
 	    document.getElementById('websitePreview').addEventListener('show.bs.modal', function () {
 	        var frame = this.querySelector('iframe');
