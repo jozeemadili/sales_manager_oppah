@@ -22,7 +22,7 @@
 <link rel="icon" href="{{ asset('assets/images/logo/oppah.png') }}">
 <script>document.documentElement.classList.add('js');</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Oswald:wght@600;700&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 <style>
     :root {
         --blue: #4c73aa; --blue-dark: #2f4f7f; --green: #3f8f3a; --green-soft: #eaf4e8;
@@ -84,10 +84,12 @@
     .hero { position: relative; overflow: hidden; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: calc(var(--head) + 40px) 0 90px; background: var(--night); color: #fff; }
     .hero .wrap { position: relative; z-index: 2; width: 100%; }
     .hero-copy { max-width: 660px; }
-    .hero-brand { max-width: 760px; margin: 0 auto; text-align: center; }
-    .hero-logo { width: 240px; max-width: 70%; background: #fff; border-radius: 28px; padding: 18px 26px; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
-    .hero-brand h1 { margin: 28px 0 10px; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
-    .hero-brand .slogan { margin: 0; font-size: 21px; font-style: italic; color: #f2b56b; letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.45); }
+    /* Hero brand block, styled after the logo: condensed bold italic caps + rounded slogan */
+    .hero-brand { max-width: 860px; margin: 0 auto; text-align: center; }
+    .hero-logo { width: 300px; max-width: 72%; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 18px rgba(255,255,255,.55)); }
+    .hero-brand h1 { display: inline-block; margin: 22px 0 12px; font-family: Oswald, 'Arial Narrow', sans-serif; font-weight: 700; font-size: 58px; line-height: 1.05; text-transform: uppercase; letter-spacing: .01em; transform: skewX(-9deg); text-shadow: 0 3px 18px rgba(0,0,0,.5); }
+    .hero-brand h1 .oppah { color: #19b25e; }
+    .hero-brand .slogan { margin: 0; font-family: Quicksand, Inter, sans-serif; font-weight: 700; font-size: 22px; color: #a9d4f5; letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.55); }
     .hero-slides { position: absolute; inset: 0; z-index: 0; }
     .hero-slides div { position: absolute; inset: 0; background-size: cover; background-position: center 40%; opacity: 0; transform: scale(1.06); transition: opacity 1.2s ease, transform 7s ease; }
     .hero-slides div.on { opacity: 1; transform: scale(1); }
@@ -250,6 +252,8 @@
     }
     @media (max-width: 600px) {
         h1 { font-size: 32px; }
+        .hero-brand h1 { font-size: 36px; }
+        .hero-brand .slogan { font-size: 18px; }
         .hero { padding-bottom: 80px; }
         .hero .lead { font-size: 17px; }
         .services, .grid3, .foot-grid { grid-template-columns: 1fr; }
@@ -289,7 +293,7 @@
     <div class="wrap">
         <div class="hero-copy hero-brand">
             <img class="hero-logo" src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo">
-            <h1>{{ $name }}</h1>
+            <h1><span class="oppah">Oppah</span> Logistics &amp; Timber Supply</h1>
             <p class="slogan">Smart Generation In Smart Business</p>
         </div>
     </div>
