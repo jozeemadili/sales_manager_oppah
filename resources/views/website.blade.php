@@ -84,10 +84,14 @@
     .hero { position: relative; overflow: hidden; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: calc(var(--head) + 40px) 0 90px; background: var(--night); color: #fff; }
     .hero .wrap { position: relative; z-index: 2; width: 100%; }
     .hero-copy { max-width: 660px; }
+    .hero-brand { max-width: 760px; margin: 0 auto; text-align: center; }
+    .hero-logo { width: 240px; max-width: 70%; background: #fff; border-radius: 28px; padding: 18px 26px; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+    .hero-brand h1 { margin: 28px 0 10px; text-shadow: 0 2px 18px rgba(0,0,0,.45); }
+    .hero-brand .slogan { margin: 0; font-size: 21px; font-style: italic; color: #f2b56b; letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.45); }
     .hero-slides { position: absolute; inset: 0; z-index: 0; }
     .hero-slides div { position: absolute; inset: 0; background-size: cover; background-position: center 40%; opacity: 0; transform: scale(1.06); transition: opacity 1.2s ease, transform 7s ease; }
     .hero-slides div.on { opacity: 1; transform: scale(1); }
-    .hero::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(15,26,40,.9) 0%, rgba(15,26,40,.6) 55%, rgba(15,26,40,.2) 100%), linear-gradient(180deg, rgba(15,26,40,.55) 0%, transparent 25%); }
+    .hero::after { content: ""; position: absolute; inset: 0; z-index: 1; background: radial-gradient(ellipse at center, rgba(15,26,40,.72) 0%, rgba(15,26,40,.5) 55%, rgba(15,26,40,.3) 100%), linear-gradient(180deg, rgba(15,26,40,.5) 0%, transparent 25%); }
     .hero .eyebrow { color: #8fd18a; }
     .hero h1 span { color: #f2b56b; }
     .hero .lead { font-size: 19px; color: rgba(255,255,255,.88); max-width: 560px; margin: 0; }
@@ -283,14 +287,10 @@
         @endforeach
     </div>
     <div class="wrap">
-        <div class="hero-copy">
-            <div class="eyebrow">Kongowe Mzinga &middot; Dar es Salaam</div>
-            <h1>Timber you can build on. <span>Trucks you can count on.</span></h1>
-            <p class="lead">We supply quality timber (mbao) and move it, and your cargo, with our own Scania fleet across Tanzania.</p>
-            <div class="actions">
-                <a class="btn btn-wa" href="{{ $wa('Hello Oppah, I would like a quote for ') }}" target="_blank" rel="noopener">WhatsApp for a quote</a>
-                <a class="btn btn-glass glass" href="#services">Our services <span class="arrow">&rarr;</span></a>
-            </div>
+        <div class="hero-copy hero-brand">
+            <img class="hero-logo" src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo">
+            <h1>{{ $name }}</h1>
+            <p class="slogan">Smart Generation In Smart Business</p>
         </div>
     </div>
     <div class="hero-dots">
