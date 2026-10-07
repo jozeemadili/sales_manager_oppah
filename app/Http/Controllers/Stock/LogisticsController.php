@@ -123,15 +123,29 @@ class LogisticsController extends Controller
 
     public function getBankDeposit(Request $request)
     {
+        // Type tab: Logistics (default, this page lives under Logistics), Mbao
+        // (deposits made from the Mbao dashboard) or All.
+        $type = in_array($request->input('type'), ['logistics', 'mbao', 'all'], true) ? $request->input('type') : 'logistics';
+
         // Filters: deposit date range, bank and account (dropdowns from the
         // distinct values in the table; bank names compared case-insensitively).
-        $query = BankDeposist::with('files')
+        $filtered = BankDeposist::query()
             ->when($request->filled('from'), fn ($q) => $q->where('deposited_date', '>=', Carbon::parse($request->from)->startOfDay()))
             ->when($request->filled('to'), fn ($q) => $q->where('deposited_date', '<=', Carbon::parse($request->to)->endOfDay()))
             ->when($request->filled('bank'), fn ($q) => $q->whereRaw('UPPER(TRIM(bank_name)) = ?', [strtoupper(trim($request->bank))]))
             ->when($request->filled('account'), fn ($q) => $q->where('account_number', $request->account));
 
-        $totalDeposits = (clone $query)->sum('deposited_amount');
+        $typeTotals = [
+            'logistics' => (clone $filtered)->logistics()->sum('deposited_amount'),
+            'mbao' => (clone $filtered)->mbao()->sum('deposited_amount'),
+        ];
+        $typeTotals['all'] = (clone $filtered)->sum('deposited_amount');
+
+        $query = (clone $filtered)->with('files')
+            ->when($type === 'logistics', fn ($q) => $q->logistics())
+            ->when($type === 'mbao', fn ($q) => $q->mbao());
+
+        $totalDeposits = $typeTotals[$type];
         $deposits = $query->orderBy('id', 'desc')->paginate(10)->withQueryString();
 
         $banks = BankDeposist::whereNotNull('bank_name')->where('bank_name', '!=', '')
@@ -145,6 +159,8 @@ class LogisticsController extends Controller
             'totalDeposits' => $totalDeposits,
             'banks' => $banks,
             'accounts' => $accounts,
+            'type' => $type,
+            'typeTotals' => $typeTotals,
         ]);
     }
 
@@ -170,6 +186,7 @@ class LogisticsController extends Controller
             'status'           => 'Pending',
             'deposited_date'   => $request->deposited_date,
             'deposit_origin'   => $request->deposit_origin,
+            'source'           => BankDeposist::SOURCE_LOGISTICS,
             'created_at'       => now(),
         ]);
     

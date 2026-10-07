@@ -162,7 +162,7 @@ class OverviewDashboard extends Component
 
         $revenueToday = (clone $routeQuery)->whereDate('route_date', today())->sum('total_fee');
 
-        $depositsThisMonth = BankDeposist::whereMonth('deposited_date', now()->month)
+        $depositsThisMonth = BankDeposist::logistics()->whereMonth('deposited_date', now()->month)
             ->whereYear('deposited_date', now()->year)
             ->sum('deposited_amount');
 

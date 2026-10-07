@@ -58,6 +58,24 @@ class BankDeposist extends Model
 
 	// Deposits of the Mbao daily balance, recorded from the Mbao dashboard.
 	const SOURCE_MBAO = 'MBAO';
+	// Deposits recorded on the Logistics "Bank Deposits" page. Older logistics
+	// deposits were saved before this column existed and have no source.
+	const SOURCE_LOGISTICS = 'LOGISTICS';
+
+	public function scopeLogistics($query)
+	{
+		return $query->where(fn ($q) => $q->whereNull('source')->orWhere('source', self::SOURCE_LOGISTICS));
+	}
+
+	public function scopeMbao($query)
+	{
+		return $query->where('source', self::SOURCE_MBAO);
+	}
+
+	public function isMbao()
+	{
+		return $this->source === self::SOURCE_MBAO;
+	}
 
 	public function user()
 	{

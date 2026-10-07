@@ -44,7 +44,7 @@
     @slot('breadcrumb_action_buttons')
         <li>
             <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newModal">
-                New <i class="icofont icofont-plus-circle"></i>
+                New Logistics Deposit <i class="icofont icofont-plus-circle"></i>
             </button>
         </li>
     @endslot
@@ -75,13 +75,28 @@
 <div class="card">
     <div class="card-header">
         <h5>Bank Deposits</h5>
-    
-        <h6 class="text-success mt-2">
-            <strong>Total Deposits{{ request()->anyFilled(['from', 'to', 'bank', 'account']) ? ' (filtered)' : '' }}:</strong>
+
+        {{-- Logistics deposits are added on this page; Mbao deposits come from the Mbao dashboard. --}}
+        <ul class="nav nav-pills mt-2">
+            @foreach(['logistics' => 'Logistics', 'mbao' => 'Mbao', 'all' => 'All'] as $key => $label)
+                <li class="nav-item me-2">
+                    <a class="nav-link {{ $type === $key ? 'active' : 'border' }}" href="{{ request()->fullUrlWithQuery(['type' => $key, 'page' => null]) }}">
+                        {{ $label }} <span class="badge {{ $type === $key ? 'bg-light text-dark' : 'bg-secondary' }} ms-1">{{ number_format($typeTotals[$key], 0) }}</span>
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+
+        <h6 class="text-success mt-3">
+            <strong>Total {{ ['logistics' => 'Logistics', 'mbao' => 'Mbao', 'all' => 'All'][$type] }} Deposits{{ request()->anyFilled(['from', 'to', 'bank', 'account']) ? ' (filtered)' : '' }}:</strong>
             {{ number_format($totalDeposits, 2) }}
         </h6>
+        @if($type === 'mbao')
+            <small class="text-muted d-block">Mbao deposits are recorded from the Mbao dashboard (Balance card &rarr; Bank deposit).</small>
+        @endif
 
         <form method="GET" action="{{ route('bank-deposit') }}" class="row g-2 align-items-end mt-2">
+            <input type="hidden" name="type" value="{{ $type }}">
             <div class="col-md-2">
                 <label class="small mb-0">From</label>
                 <input type="date" name="from" class="form-control" value="{{ request('from') }}">
@@ -110,7 +125,7 @@
             </div>
             <div class="col-md-2 d-flex gap-1">
                 <button type="submit" class="btn btn-primary w-100">Filter</button>
-                <a href="{{ route('bank-deposit') }}" class="btn btn-outline-secondary">Clear</a>
+                <a href="{{ route('bank-deposit', ['type' => $type]) }}" class="btn btn-outline-secondary">Clear</a>
             </div>
         </form>
     </div>
@@ -122,6 +137,7 @@
         <thead>
             <tr>
                 <th>#</th>
+                <th>Type</th>
                 <th>Source / Origin </th>
                 <th>Bank Deposited</th>
                 <th>Account</th>
@@ -136,6 +152,13 @@
         @foreach ($deposits as $deposit)
             <tr>
                 <td>{{ $deposit->id }}</td>
+                <td>
+                    @if($deposit->isMbao())
+                        <span class="badge bg-success">Mbao</span>
+                    @else
+                        <span class="badge bg-primary">Logistics</span>
+                    @endif
+                </td>
                 <td>{{ $deposit->deposit_origin }}</td>
                 <td>{{ strtoupper(trim($deposit->bank_name)) }}</td>
                 <td>{{ $deposit->account_number ?: '—' }}</td>
@@ -159,7 +182,8 @@
                     @endforelse
                 </td>
                 <td>
-                    @if($deposit->status == 'Pending')
+                    {{-- Mbao deposits are managed from the Mbao dashboard. --}}
+                    @if($deposit->status == 'Pending' && !$deposit->isMbao())
                     <div class="pull-right">
                         <a href="{!! Route('delete-unsubmited-deposit', ['id' => $deposit->id, 'status' => 'Inactive']) !!}" 
                            class="btn btn-outline-danger btn-xs"
@@ -191,7 +215,7 @@
                 @csrf
 
                 <div class="modal-header">
-                    <h5 class="modal-title">Add Bank Deposit</h5>
+                    <h5 class="modal-title">Add Logistics Bank Deposit</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
