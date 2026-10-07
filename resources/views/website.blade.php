@@ -85,15 +85,17 @@
     .hero .wrap { position: relative; z-index: 2; width: 100%; }
     .hero-copy { max-width: 660px; }
     /* Hero brand block, styled after the logo: condensed bold italic caps + rounded slogan */
-    .hero-brand { max-width: 860px; margin: 0 auto; text-align: center; }
-    .hero-logo { width: 300px; max-width: 72%; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 18px rgba(255,255,255,.55)); }
-    .hero-brand h1 { display: inline-block; margin: 22px 0 12px; font-family: Oswald, 'Arial Narrow', sans-serif; font-weight: 700; font-size: 58px; line-height: 1.05; text-transform: uppercase; letter-spacing: .01em; transform: skewX(-9deg); text-shadow: 0 3px 18px rgba(0,0,0,.5); }
-    .hero-brand h1 .oppah { color: #19b25e; }
-    .hero-brand .slogan { margin: 0; font-family: Quicksand, Inter, sans-serif; font-weight: 700; font-size: 22px; color: #a9d4f5; letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.55); }
+    .hero-brand { max-width: 720px; text-align: left; }
+    .hero-logo { display: block; width: 210px; max-width: 55%; margin-left: -6px; filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 18px rgba(255,255,255,.5)); }
+    .hero-brand h1 { margin: 18px 0 18px; font-family: Oswald, 'Arial Narrow', sans-serif; font-weight: 700; font-size: 84px; line-height: 1.02; text-transform: uppercase; letter-spacing: .005em; transform: skewX(-8deg); transform-origin: left bottom; text-shadow: 0 3px 18px rgba(0,0,0,.45); }
+    .hero .hero-brand h1 > span { display: block; color: #fff; }
+    .hero .hero-brand h1 .oppah { color: #19b25e; }
+    .hero .hero-brand h1 .accent { background: linear-gradient(90deg, #8fd18a, #7fb6ea); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none; }
+    .hero-brand .slogan { margin: 0; font-family: Quicksand, Inter, sans-serif; font-weight: 700; font-size: 22px; color: rgba(255,255,255,.92); letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.55); }
     .hero-slides { position: absolute; inset: 0; z-index: 0; }
     .hero-slides div { position: absolute; inset: 0; background-size: cover; background-position: center 40%; opacity: 0; transform: scale(1.06); transition: opacity 1.2s ease, transform 7s ease; }
     .hero-slides div.on { opacity: 1; transform: scale(1); }
-    .hero::after { content: ""; position: absolute; inset: 0; z-index: 1; background: radial-gradient(ellipse at center, rgba(15,26,40,.72) 0%, rgba(15,26,40,.5) 55%, rgba(15,26,40,.3) 100%), linear-gradient(180deg, rgba(15,26,40,.5) 0%, transparent 25%); }
+    .hero::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(90deg, rgba(15,26,40,.88) 0%, rgba(15,26,40,.6) 45%, rgba(15,26,40,.15) 100%), linear-gradient(180deg, rgba(15,26,40,.5) 0%, transparent 25%); }
     .hero .eyebrow { color: #8fd18a; }
     .hero h1 span { color: #f2b56b; }
     .hero .lead { font-size: 19px; color: rgba(255,255,255,.88); max-width: 560px; margin: 0; }
@@ -234,6 +236,7 @@
 
     @media (max-width: 960px) {
         h1 { font-size: 40px; }
+        .hero-brand h1 { font-size: 62px; }
         h2 { font-size: 28px; }
         section { padding: 64px 0; }
         .about, .findus, .panel { grid-template-columns: 1fr; }
@@ -252,7 +255,8 @@
     }
     @media (max-width: 600px) {
         h1 { font-size: 32px; }
-        .hero-brand h1 { font-size: 36px; }
+        .hero-brand h1 { font-size: 46px; }
+        .hero-logo { width: 150px; }
         .hero-brand .slogan { font-size: 18px; }
         .hero { padding-bottom: 80px; }
         .hero .lead { font-size: 17px; }
@@ -293,7 +297,7 @@
     <div class="wrap">
         <div class="hero-copy hero-brand">
             <img class="hero-logo" src="{{ asset('assets/images/logo/oppah.png') }}" alt="{{ $name }} logo">
-            <h1><span class="oppah">Oppah</span> Logistics &amp; Timber Supply</h1>
+            <h1><span><span class="oppah">Oppah</span> Logistics</span><span class="accent">&amp; Timber Supply</span></h1>
             <p class="slogan">Smart Generation In Smart Business</p>
         </div>
     </div>
